@@ -35,6 +35,15 @@
   --color-ink: #0f1c2b;
   --color-muted: #5a6b7d;
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  /* Public (night) surface used by the marketing shell. */
+  --color-night: #0f0f12;
+  --color-night-elevated: #15151a;
+  --color-night-line: #26262e;
+  --color-night-soft: #a1a1aa;
+  --color-brand-violet: #8b5cf6;
+  --color-brand-pink: #f472b6;
 }
 
 @layer base {
@@ -63,6 +72,148 @@
   .prose-code {
     @apply overflow-x-auto rounded-xl bg-primary-900 p-4 text-xs leading-relaxed text-primary-50;
   }
+
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  /* White pill CTA, like the daily.dev header button. */
+  .btn-light {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white;
+    background-color: #ffffff;
+    color: #0f0f12;
+  }
+
+  .btn-light:hover {
+    background-color: #e8e8ec;
+  }
+
+  .night-card {
+    @apply rounded-2xl border border-[#26262e] bg-[#15151a];
+  }
+
+  .night-pill {
+    @apply inline-flex items-center gap-2 rounded-full border border-[#2c2c35] bg-[#17171d] px-4 py-2 text-sm font-medium text-[#c9c9d2] transition hover:border-[#3a3a45] hover:text-white;
+  }
+}
+
+/*
+ * Night scope: the public marketing site mirrors the daily.dev look.
+ * Tailwind v4 utilities resolve their colours through CSS variables, so a
+ * scoped remap repaints every existing page without rewriting each one.
+ */
+html[data-theme="night"] {
+  --color-surface: #0f0f12;
+  --color-ink: #f4f4f5;
+  --color-muted: #9b9ba6;
+
+  --color-slate-50: #1b1b21;
+  --color-slate-100: #24242c;
+  --color-slate-200: #26262e;
+  --color-slate-300: #3a3a45;
+  --color-slate-400: #6f6f7d;
+
+  --color-primary-50: #1e1a2e;
+  --color-primary-100: #2b2440;
+  --color-primary-200: #3d3459;
+  --color-primary-300: #a78bfa;
+  --color-primary-400: #a78bfa;
+  --color-primary-500: #8b5cf6;
+  --color-primary-600: #7c3aed;
+  --color-primary-700: #8b5cf6;
+  --color-primary-800: #a78bfa;
+  --color-primary-900: #0b0b0e;
+
+  --color-highlight: #f472b6;
+  --color-highlight-500: #f472b6;
+  --color-highlight-600: #ec4899;
+
+  color-scheme: dark;
+  background-color: #0f0f12;
+}
+
+html[data-theme="night"] body {
+  background-color: #0f0f12;
+  color: #f4f4f5;
+}
+
+html[data-theme="night"] .surface-card {
+  background-color: #15151a;
+  border-color: #26262e;
+  box-shadow: none;
+}
+
+html[data-theme="night"] .bg-white {
+  background-color: #1b1b21;
+}
+
+/* Headings keep their element colour, not the purple brand scale. */
+html[data-theme="night"] h1,
+html[data-theme="night"] h2,
+html[data-theme="night"] h3,
+html[data-theme="night"] .text-primary-800,
+html[data-theme="night"] .text-primary-900 {
+  color: #f4f4f5;
+}
+
+html[data-theme="night"] .text-primary-700 {
+  color: #c4b5fd;
+}
+
+html[data-theme="night"] input,
+html[data-theme="night"] textarea,
+html[data-theme="night"] select {
+  background-color: #1b1b21;
+  border-color: #2c2c35;
+  color: #f4f4f5;
+}
+
+html[data-theme="night"] input::placeholder,
+html[data-theme="night"] textarea::placeholder {
+  color: #7b7b88;
+}
+
+@keyframes night-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes night-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes night-glow {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+.animate-rise {
+  animation: night-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-float {
+  animation: night-float 7s ease-in-out infinite;
+}
+
+.animate-glow {
+  animation: night-glow 9s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
