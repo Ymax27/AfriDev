@@ -56,7 +56,7 @@ export default function CountryHubPage() {
       </dl>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
+        <Card className="min-w-0">
           <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-primary-800">
             <Trophy className="size-4 text-highlight-500" aria-hidden="true" /> {t("countries.topDevelopers")}
           </h2>
@@ -70,7 +70,7 @@ export default function CountryHubPage() {
                     <Link to={`/profile/${developer.username}`} className="block truncate text-sm font-medium text-primary-800 hover:underline">
                       {developer.full_name ?? developer.username}
                     </Link>
-                    <p className="text-xs text-muted">@{developer.username}</p>
+                    <p className="truncate text-xs text-muted">@{developer.username}</p>
                   </div>
                   <Badge tone="primary">{developer.reputation_points} pts</Badge>
                 </li>
@@ -81,7 +81,7 @@ export default function CountryHubPage() {
           )}
         </Card>
 
-        <Card>
+        <Card className="min-w-0">
           <h2 className="mb-3 text-sm font-semibold text-primary-800">{t("countries.recentProjects")}</h2>
           {hub.data.recent_projects.length > 0 ? (
             <ul className="space-y-2">
@@ -99,7 +99,7 @@ export default function CountryHubPage() {
           )}
         </Card>
 
-        <Card>
+        <Card className="min-w-0">
           <h2 className="mb-3 text-sm font-semibold text-primary-800">{t("countries.recentReports")}</h2>
           {hub.data.recent_field_reports.length > 0 ? (
             <ul className="space-y-2">
@@ -107,7 +107,11 @@ export default function CountryHubPage() {
                 <li key={report.id}>
                   <Link to={`/field-reports/${report.id}`} className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 p-2.5 hover:bg-slate-50">
                     <span className="truncate text-sm font-medium text-primary-800">{report.title}</span>
-                    <Badge tone={report.status === "confirmed" ? "accent" : "primary"}>{report.status.replaceAll("_", " ")}</Badge>
+                    <Badge tone={report.status === "confirmed" || report.status === "community_confirmed" ? "accent" : "primary"}>
+                      {t(`fieldReports.status${report.status.split("_").map((part) => part[0]?.toUpperCase() + part.slice(1)).join("")}`, {
+                        defaultValue: report.status.replaceAll("_", " "),
+                      })}
+                    </Badge>
                   </Link>
                 </li>
               ))}
@@ -123,7 +127,7 @@ export default function CountryHubPage() {
           description={t("rooms.countryDescription")}
         />
 
-        <Card>
+        <Card className="min-w-0">
           <h2 className="mb-3 text-sm font-semibold text-primary-800">{t("countries.openMissions")}</h2>
           {hub.data.open_missions.length > 0 ? (
             <ul className="space-y-2">

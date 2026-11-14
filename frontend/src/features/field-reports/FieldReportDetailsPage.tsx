@@ -49,7 +49,11 @@ export default function FieldReportDetailsPage() {
 
       <header className="surface-card mb-5 p-6">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge tone={data.status === "confirmed" ? "accent" : "primary"}>{data.status.replaceAll("_", " ")}</Badge>
+          <Badge tone={data.status === "confirmed" || data.status === "community_confirmed" ? "accent" : "primary"}>
+            {t(`fieldReports.status${data.status.split("_").map((part) => part[0]?.toUpperCase() + part.slice(1)).join("")}`, {
+              defaultValue: data.status.replaceAll("_", " "),
+            })}
+          </Badge>
           {data.country ? (
             <Badge tone="neutral">{data.country.flag_emoji ?? ""} {language === "fr" ? data.country.name_fr : data.country.name}</Badge>
           ) : null}

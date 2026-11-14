@@ -82,7 +82,7 @@ export function ChatRoom({ roomPath, title, description }: { roomPath: string; t
   };
 
   return (
-    <Card>
+    <Card className="min-w-0">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="text-sm font-semibold text-primary-800">{title}</h2>
@@ -117,7 +117,7 @@ export function ChatRoom({ roomPath, title, description }: { roomPath: string; t
               <p className="text-xs text-muted">{t("rooms.empty")}</p>
             ) : (
               entries.map((entry) => (
-                <p key={entry.id} className="text-sm">
+                <p key={entry.id} className="break-words text-sm">
                   {entry.author ? (
                     <span className={entry.mine ? "font-semibold text-accent-700" : "font-semibold text-primary-700"}>
                       @{entry.author}{" "}
@@ -130,7 +130,7 @@ export function ChatRoom({ roomPath, title, description }: { roomPath: string; t
           </div>
 
           <div className="mt-3 flex items-end gap-2">
-            <label className="flex-1">
+            <label className="min-w-0 flex-1">
               <span className="sr-only">{t("rooms.placeholder")}</span>
               <textarea
                 value={draft}

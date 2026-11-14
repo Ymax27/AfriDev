@@ -57,7 +57,9 @@ export function PublicLayout() {
       </header>
 
       <main id="main-content" className="flex-1">
-        <Outlet />
+        <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:py-10">
+          <Outlet />
+        </div>
       </main>
 
       <footer className="border-t border-slate-200 bg-white">

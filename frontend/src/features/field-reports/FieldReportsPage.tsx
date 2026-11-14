@@ -14,6 +14,7 @@ import { formatDate, truncate } from "@/lib/utils";
 
 const STATUS_TONE: Record<string, "accent" | "primary" | "highlight" | "neutral"> = {
   confirmed: "accent",
+  community_confirmed: "accent",
   published: "primary",
   needs_revalidation: "highlight",
   archived: "neutral",
@@ -21,6 +22,7 @@ const STATUS_TONE: Record<string, "accent" | "primary" | "highlight" | "neutral"
 
 const STATUS_KEYS: Record<string, string> = {
   confirmed: "fieldReports.statusConfirmed",
+  community_confirmed: "fieldReports.statusCommunityConfirmed",
   published: "fieldReports.statusPublished",
   needs_revalidation: "fieldReports.statusNeedsRevalidation",
   archived: "fieldReports.statusArchived",

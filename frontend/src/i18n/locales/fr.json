@@ -237,6 +237,7 @@
     "empty": "Aucun rapport terrain.",
     "statusPublished": "Publié",
     "statusConfirmed": "Confirmé par la communauté",
+    "statusCommunityConfirmed": "Confirmé par la communauté",
     "statusNeedsRevalidation": "À revalider",
     "statusArchived": "Archivé",
     "confirmations": "confirmations",
@@ -353,7 +354,15 @@
     "viewDocs": "Ouvrir la documentation",
     "filterCountry": "Pays",
     "editTitle": "Modifier la fiche",
-    "description": "Description"
+    "description": "Description",
+    "categories": {
+      "payments": "Paiements",
+      "billing": "Facturation",
+      "communication": "Communication",
+      "identity": "Identité",
+      "localization": "Localisation",
+      "languages": "Langues"
+    }
   },
   "messages": {
     "title": "Messages",
@@ -519,7 +528,8 @@
     "expert": "Expert"
   },
   "rooms": {
-    "presence": "{{count}} personne(s) dans le salon",
+    "presence_one": "{{count}} personne dans le salon",
+    "presence_other": "{{count}} personnes dans le salon",
     "slowDown": "Doucement : limite de messages atteinte, réessayez dans quelques secondes.",
     "connected": "Connecté",
     "disconnected": "Hors ligne",

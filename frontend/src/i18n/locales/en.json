@@ -237,6 +237,7 @@
     "empty": "No field report.",
     "statusPublished": "Published",
     "statusConfirmed": "Community confirmed",
+    "statusCommunityConfirmed": "Community confirmed",
     "statusNeedsRevalidation": "Needs revalidation",
     "statusArchived": "Archived",
     "confirmations": "confirmations",
@@ -353,7 +354,15 @@
     "viewDocs": "Open documentation",
     "filterCountry": "Country",
     "editTitle": "Edit sheet",
-    "description": "Description"
+    "description": "Description",
+    "categories": {
+      "payments": "Payments",
+      "billing": "Billing",
+      "communication": "Communication",
+      "identity": "Identity",
+      "localization": "Localization",
+      "languages": "Languages"
+    }
   },
   "messages": {
     "title": "Messages",
@@ -519,7 +528,8 @@
     "expert": "Expert"
   },
   "rooms": {
-    "presence": "{{count}} people in the room",
+    "presence_one": "{{count}} person in the room",
+    "presence_other": "{{count}} people in the room",
     "slowDown": "Slow down: message limit reached, retry in a few seconds.",
     "connected": "Connected",
     "disconnected": "Offline",

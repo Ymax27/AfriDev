@@ -59,6 +59,10 @@ export default function MissionDetailsPage() {
 
   const data = mission.data;
   const alreadySubmitted = submissions.data?.some((item) => item.developer_id === user?.id) ?? false;
+  const statusLabel = (value: string) =>
+    t(`missions.status${value.split("_").map((part) => part[0]?.toUpperCase() + part.slice(1)).join("")}`, {
+      defaultValue: value.replaceAll("_", " "),
+    });
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -70,7 +74,7 @@ export default function MissionDetailsPage() {
 
       <header className="surface-card mb-5 p-6">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge tone="accent">{data.status.replaceAll("_", " ")}</Badge>
+          <Badge tone="accent">{statusLabel(data.status)}</Badge>
           {data.country ? <Badge tone="neutral">{data.country.flag_emoji ?? ""} {language === "fr" ? data.country.name_fr : data.country.name}</Badge> : null}
           {user ? (
             <Button variant="ghost" size="sm" className="ml-auto" onClick={() => setReportOpen(true)} icon={<Flag className="size-4" aria-hidden="true" />}>
@@ -126,7 +130,7 @@ export default function MissionDetailsPage() {
               {submissions.data.map((submission) => (
                 <li key={submission.id} className="rounded-xl border border-slate-100 p-3">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-medium text-primary-800">{submission.status}</p>
+                    <p className="text-sm font-medium text-primary-800">{statusLabel(submission.status)}</p>
                     {submission.points_awarded > 0 ? <Badge tone="accent">+{submission.points_awarded} pts</Badge> : null}
                   </div>
                   <p className="mt-1 whitespace-pre-line text-sm text-muted">{submission.summary}</p>

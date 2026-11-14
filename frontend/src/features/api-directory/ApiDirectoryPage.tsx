@@ -69,7 +69,7 @@ export default function ApiDirectoryPage() {
             <option value="">{t("common.all")}</option>
             {(categories.data ?? []).map((item) => (
               <option key={item.category} value={item.category}>
-                {item.category} ({item.count})
+                {t(`apis.categories.${item.category}`, { defaultValue: item.category })} ({item.count})
               </option>
             ))}
           </Select>
@@ -111,7 +111,7 @@ export default function ApiDirectoryPage() {
                 </div>
                 <p className="text-sm text-muted">{truncate(entry.description, 140)}</p>
                 <div className="flex flex-wrap gap-1.5 text-xs">
-                  <Badge tone="primary">{entry.category}</Badge>
+                  <Badge tone="primary">{t(`apis.categories.${entry.category}`, { defaultValue: entry.category })}</Badge>
                   {entry.countries.slice(0, 3).map((code) => (
                     <Badge key={code} tone="neutral">{code}</Badge>
                   ))}

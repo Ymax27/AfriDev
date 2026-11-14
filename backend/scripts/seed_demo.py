@@ -134,6 +134,53 @@ API_ENTRIES = [
     ("PayDunya", "PayDunya", "billing", "Recurring billing and payment links for francophone Africa.", "https://paydunya.com/developers", "2% per transaction", ["SN", "CI", "CM", "BJ", "TG"]),
     ("Lelapa AI InkubaLM", "Lelapa AI", "languages", "Small multilingual models for African languages and local use cases.", "https://lelapa.ai", "Commercial licence", ["ZA", "NG", "KE"]),
     ("Khaya AI Translation", "Khaya AI", "languages", "Translation and speech APIs for Ghanaian and West African languages.", "https://khaya.ai/docs", "Usage based", ["GH", "NG", "CI"]),
+    # Payments
+    ("M-Pesa Daraja API", "Safaricom", "payments", "STK push, C2B and B2C mobile money flows on Kenya's M-Pesa network.", "https://developer.safaricom.co.ke", "Paybill transaction fees", ["KE", "TZ", "GH"]),
+    ("Airtel Money Collections", "Airtel Africa", "payments", "Collections and disbursements on the Airtel Money wallet across 14 markets.", "https://developers.airtel.africa", "Per-transaction fee", ["KE", "UG", "TZ", "RW", "NG", "ZM"]),
+    ("Hubtel Payments", "Hubtel", "payments", "Mobile money, card and wallet checkout for Ghanaian merchants.", "https://developers.hubtel.com", "Negotiated per transaction", ["GH"]),
+    ("Paymob Accept", "Paymob", "payments", "Card and wallet acceptance with installments for North African merchants.", "https://developers.paymob.com", "2.75% per transaction", ["EG", "KE", "OM", "SA"]),
+    # Billing
+    ("Yoco Online Payments", "Yoco", "billing", "Card checkout and payment links for South African small businesses.", "https://developer.yoco.com", "2.95% + fixed fee", ["ZA"]),
+    ("Peach Payments", "Peach Payments", "billing", "Card, EFT and recurring billing rails across Southern Africa.", "https://developer.peachpayments.com", "Per-transaction fee", ["ZA", "KE", "MU"]),
+    ("DPO Group Payment API", "Network International", "billing", "Single payment gateway covering 20+ African countries and currencies.", "https://docs.dpopay.com", "Negotiated per transaction", ["KE", "NG", "GH", "ZA", "TZ", "UG", "RW"]),
+    ("SeerBit", "SeerBit", "billing", "Card, transfer and USSD checkout with subscriptions and split payments.", "https://doc.seerbit.com", "1.5% capped fee", ["NG", "GH", "KE"]),
+    ("Fincra", "Fincra", "billing", "Collections, payouts and virtual accounts for African businesses.", "https://docs.fincra.com", "Per-transaction fee", ["NG", "GH", "KE", "ZA"]),
+    ("Pesapal", "Pesapal", "billing", "Checkout and recurring billing used by East African merchants and schools.", "https://developer.pesapal.com", "Per-transaction fee", ["KE", "UG", "TZ"]),
+    ("Cellulant Tingg", "Cellulant", "billing", "Pan-African collections and payouts with a single integration and settlement API.", "https://docs.tingg.africa", "Negotiated per transaction", ["KE", "NG", "GH", "TZ", "UG", "ZM", "RW"]),
+    ("Interswitch Payment API", "Interswitch", "billing", "Card payments, transfers and bill payments for West African merchants.", "https://developer.interswitchgroup.com", "Negotiated per transaction", ["NG", "GH", "KE"]),
+    # Communication
+    ("Twilio Messaging", "Twilio", "communication", "Programmable SMS, WhatsApp and voice with African sender routes.", "https://www.twilio.com/docs/messaging", "Per-message pricing", ["ZA", "NG", "KE", "GH", "CM", "SN", "CI", "RW"]),
+    ("WhatsApp Business Cloud API", "Meta", "communication", "Official WhatsApp messaging for notifications and support conversations.", "https://developers.facebook.com/docs/whatsapp/cloud-api", "Per-conversation pricing", ["NG", "KE", "ZA", "GH", "CM", "CI", "SN", "RW"]),
+    ("Vonage Messages API", "Vonage", "communication", "SMS, WhatsApp and Viber delivery through one messages endpoint.", "https://developer.vonage.com/en/messages", "Per-message pricing", ["ZA", "NG", "KE", "GH"]),
+    ("Sendchamp", "Sendchamp", "communication", "SMS, WhatsApp and email delivery with local Nigerian sender IDs.", "https://docs.sendchamp.com", "From NGN 2.40 per SMS", ["NG", "GH"]),
+    ("360dialog WhatsApp API", "360dialog", "communication", "WhatsApp Business API hosting with per-message billing.", "https://docs.360dialog.com", "Per-message pricing", ["KE", "NG", "ZA", "GH"]),
+    ("MailerSend", "MailerSend", "communication", "Transactional email with templates, domains and delivery webhooks.", "https://developers.mailersend.com", "Free tier then per email", ["ZA", "NG", "KE"]),
+    # Identity
+    ("VerifyMe Identity API", "VerifyMe", "identity", "NIN, BVN and document verification for Nigerian customers.", "https://docs.verifyme.ng", "Per-verification pricing", ["NG"]),
+    ("IdentityPass", "Premise", "identity", "Identity, address and business verification across African markets.", "https://docs.identitypass.com", "Per-verification pricing", ["NG", "KE", "GH", "ZA", "UG"]),
+    ("Youverify", "Youverify", "identity", "KYC, AML screening and liveness checks for regulated African businesses.", "https://docs.youverify.co", "Per-verification pricing", ["NG", "GH", "KE", "ZA", "CI"]),
+    ("Seamfix ID Verification", "Seamfix", "identity", "Biometric capture and ID validation used by African telecoms and banks.", "https://seamfix.com/products", "Enterprise contract", ["NG", "GH", "KE", "ZA"]),
+    ("QoreID", "QoreID", "identity", "Identity and business verification APIs for West African onboarding.", "https://docs.qoreid.com", "Per-verification pricing", ["NG", "GH", "KE"]),
+    ("Peleza", "Peleza International", "identity", "Background checks and ID verification for East African employers.", "https://peleza.com", "Per-check pricing", ["KE", "UG", "TZ", "RW"]),
+    ("MetaMap", "MetaMap", "identity", "Global identity verification with strong coverage of African documents.", "https://docs.metamap.com", "Per-verification pricing", ["NG", "KE", "GH", "ZA", "CM"]),
+    ("Verified.ng", "Verified", "identity", "NIN, BVN, CAC and vehicle checks through a single Nigerian API.", "https://verified.ng/docs", "Pay-as-you-go", ["NG"]),
+    # Localization
+    ("Mapbox Maps SDK", "Mapbox", "localization", "Vector maps, geocoding and routing with offline support for low bandwidth.", "https://docs.mapbox.com", "Free tier then usage based", ["KE", "NG", "ZA", "GH", "CM", "SN"]),
+    ("HERE Maps API", "HERE Technologies", "localization", "Geocoding, routing and map tiles with African road coverage.", "https://www.here.com/docs", "Free tier then usage based", ["ZA", "KE", "NG", "GH"]),
+    ("OpenStreetMap Nominatim", "OpenStreetMap Foundation", "localization", "Open geocoding and reverse geocoding built on community map data.", "https://nominatim.org/release-docs/latest/api/Overview", "Free with usage policy", ["CM", "NG", "KE", "GH", "SN", "CI", "ZA", "RW"]),
+    ("what3words", "what3words", "localization", "Three-word addresses for locations without formal street addressing.", "https://developer.what3words.com", "Free tier then per request", ["ZA", "NG", "KE", "GH", "CM"]),
+    ("Plus Codes", "Google Open Source", "localization", "Open location code system that turns coordinates into short addresses.", "https://github.com/google/open-location-code", "Open source / free", ["CM", "NG", "KE", "GH", "SN", "CI", "ZA", "RW"]),
+    ("Geoapify", "Geoapify", "localization", "Geocoding, isochrones and address autocomplete with a free tier.", "https://apidocs.geoapify.com", "Free tier then usage based", ["ZA", "NG", "KE"]),
+    ("TomTom Location APIs", "TomTom", "localization", "Search, routing and traffic APIs with African city coverage.", "https://developer.tomtom.com", "Free tier then usage based", ["ZA", "KE", "NG", "GH"]),
+    ("Loqate Address Validation", "GBG", "localization", "Address capture and validation for African delivery and onboarding flows.", "https://www.loqate.com/resources/support/apis", "Per-lookup pricing", ["ZA", "NG", "KE", "GH"]),
+    # Languages
+    ("Google Cloud Translation", "Google", "languages", "Machine translation with African language pairs and glossary support.", "https://cloud.google.com/translate/docs", "Per-character pricing", ["ZA", "NG", "KE", "GH", "CM", "SN", "CI", "RW"]),
+    ("Hugging Face Inference API", "Hugging Face", "languages", "Hosted inference for African language models published by the community.", "https://huggingface.co/docs/api-inference", "Free tier then usage based", ["NG", "KE", "ZA", "GH"]),
+    ("Mozilla Common Voice", "Mozilla Foundation", "languages", "Open speech datasets in African languages for training ASR models.", "https://commonvoice.mozilla.org/datasets", "Open data / free", ["CM", "KE", "ZA", "RW", "NG"]),
+    ("NLLB-200", "Meta AI", "languages", "Open multilingual translation model covering dozens of African languages.", "https://github.com/facebookresearch/fairseq/tree/nllb", "Open source / free", ["CM", "NG", "KE", "ZA", "SN", "CI", "RW", "GH"]),
+    ("GhanaNLP", "GhanaNLP", "languages", "Open datasets and models for Twi, Ewe, Ga and Dagbani.", "https://ghananlp.org", "Open source / free", ["GH"]),
+    ("SADiLaR", "South African Centre for Digital Language Resources", "languages", "Corpora, lexica and tools for South African languages.", "https://sadilar.org", "Open data / free", ["ZA"]),
+    ("DeepL API", "DeepL", "languages", "High-quality translation with glossary and document support.", "https://developers.deepl.com", "Free tier then per character", ["ZA", "NG", "KE"]),
 ]
 
 PROBLEM_TEMPLATES = [

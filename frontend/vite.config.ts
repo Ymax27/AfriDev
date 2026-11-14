@@ -18,8 +18,9 @@ export default defineConfig(({ mode }) => {
       strictPort: true,
       allowedHosts: previewHost ? [previewHost] : undefined,
       proxy: {
-        "/api": { target: "http://127.0.0.1:8000", changeOrigin: true },
-        "/ws": { target: "ws://127.0.0.1:8000", ws: true, changeOrigin: true },
+        // Anchor on the API version so SPA routes such as /api-directory are not proxied.
+        "^/api/v1/": { target: "http://127.0.0.1:8000", changeOrigin: true },
+        "^/ws/": { target: "ws://127.0.0.1:8000", ws: true, changeOrigin: true },
       },
     },
     test: {

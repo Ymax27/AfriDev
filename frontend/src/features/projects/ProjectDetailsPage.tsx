@@ -147,6 +147,7 @@ export default function ProjectDetailsPage() {
 
   const data = project.data;
   const isOwner = user?.username === data.creator.username;
+  const verifyError = verifyStart.error ?? verifyConfirm.error;
 
   return (
     <div>
@@ -481,6 +482,7 @@ export default function ProjectDetailsPage() {
         }
       >
         <div className="space-y-4">
+          {updateProject.isError ? <Alert tone="error">{t("errors.validation")}</Alert> : null}
           <Field label={t("project.name")} htmlFor="project-edit-name">
             <Input
               id="project-edit-name"
@@ -534,6 +536,9 @@ export default function ProjectDetailsPage() {
         }
       >
         <div className="space-y-4">
+          {verifyError ? (
+            <Alert tone="error">{verifyError instanceof Error ? verifyError.message : t("errors.validation")}</Alert>
+          ) : null}
           <Field label={t("project.verifyMethod")} hint={t("project.verifyMethodHelp")} htmlFor="verify-method">
             <Select id="verify-method" value={verifyMethod} onChange={(event) => setVerifyMethod(event.target.value)}>
               <option value="repository_owner">{t("project.verifyRepositoryOwner")}</option>
