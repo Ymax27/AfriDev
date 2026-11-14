@@ -1,3 +1,4 @@
+import { useRef, type TouchEvent } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowRight, Eye, Heart, Star, Users } from "lucide-react";
@@ -26,9 +27,32 @@ export function ProjectCard({
   pending?: boolean;
 }) {
   const { t } = useTranslation();
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+
+  // Swipe right to like, swipe left to pass: the same actions as the buttons.
+  const onTouchStart = (event: TouchEvent) => {
+    const touch = event.touches[0];
+    touchStart.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
+  };
+
+  const onTouchEnd = (event: TouchEvent) => {
+    if (!touchStart.current || !showActions) return;
+    const touch = event.changedTouches[0];
+    if (!touch) return;
+    const deltaX = touch.clientX - touchStart.current.x;
+    const deltaY = touch.clientY - touchStart.current.y;
+    touchStart.current = null;
+    if (Math.abs(deltaX) < 80 || Math.abs(deltaY) > Math.abs(deltaX)) return;
+    if (deltaX > 0 && onLike && !project.liked_by_me) onLike();
+    if (deltaX < 0 && onPass) onPass();
+  };
 
   return (
-    <article className="surface-card flex h-full flex-col gap-4 p-5">
+    <article
+      className="surface-card flex h-full flex-col gap-4 p-5"
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
           <Avatar name={project.name} src={project.cover_image_url} size={44} />

@@ -35,6 +35,10 @@ asyncpg (Apache-2.0), aiosqlite (MIT), Alembic (MIT), httpx (BSD-3-Clause), itsd
 | 0BSD | 1 |
 | CC-BY-4.0 | 1 (`caniuse-lite`) |
 
+Map geometry: `frontend/src/features/countries/africa-map-data.ts` is generated from the
+Natural Earth 1:110m country polygons, released in the **public domain** by Natural Earth
+(no attribution required; credited in the UI and in this file).
+
 Runtime libraries: React and React DOM (MIT), React Router (MIT), TanStack Query (MIT),
 Zustand (MIT), Axios (MIT), React Hook Form (MIT), Zod (MIT), i18next / react-i18next (MIT),
 Lucide (ISC), Tailwind CSS (MIT).

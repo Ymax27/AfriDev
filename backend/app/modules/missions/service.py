@@ -18,6 +18,11 @@ from app.modules.users.models import User
 
 
 async def create_mission(db: AsyncSession, sponsor: User, payload: MissionCreate) -> Mission:
+    allowed = sponsor.is_admin or any(
+        role.role in {"api_provider", "company", "sponsor"} for role in sponsor.roles
+    )
+    if not allowed:
+        raise ForbiddenError("Only API providers and companies can publish missions")
     mission = Mission(
         sponsor_id=sponsor.id,
         api_entry_id=payload.api_entry_id,

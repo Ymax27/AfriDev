@@ -12,6 +12,7 @@ import type {
   Message,
   Mission,
   MissionSubmission,
+  NotificationItem,
   Paginated,
   Problem,
   ProblemDetail,
@@ -76,17 +77,19 @@ export const projectsApi = {
     request<ProjectFeedback>({ method: "POST", url: `/projects/${id}/feedback`, data: payload }),
   markFeedbackUseful: (projectId: string, feedbackId: string) =>
     request<ProjectFeedback>({ method: "POST", url: `/projects/${projectId}/feedback/${feedbackId}/useful` }),
-  startOwnershipVerification: (id: string) =>
-    request<{ id: string; challenge_token: string; status: string }>({
+  startOwnershipVerification: (id: string, method: string) =>
+    request<{ id: string; challenge_token: string; status: string; method: string }>({
       method: "POST",
       url: `/projects/${id}/ownership-verification`,
-      data: { method: "repository_file" },
+      data: { method },
     }),
-  confirmOwnershipVerification: (projectId: string, verificationId: string) =>
+  confirmOwnershipVerification: (projectId: string, verificationId: string, token?: string) =>
     request<{ status: string }>({
       method: "POST",
       url: `/projects/${projectId}/ownership-verification/${verificationId}/confirm`,
+      data: { token: token || null },
     }),
+  remove: (id: string) => request<void>({ method: "DELETE", url: `/projects/${id}` }),
 };
 
 export const contributionsApi = {
@@ -110,6 +113,11 @@ export const knowledgeApi = {
     request<Solution>({ method: "POST", url: `/knowledge/${problemId}/solutions`, data: payload }),
   acceptSolution: (problemId: string, solutionId: string) =>
     request<Solution>({ method: "POST", url: `/knowledge/${problemId}/solutions/${solutionId}/accept` }),
+  voteSolution: (solutionId: string) =>
+    request<{ useful_votes: number; voted_by_me: boolean }>({
+      method: "POST",
+      url: `/knowledge/solutions/${solutionId}/vote`,
+    }),
 };
 
 export const fieldReportsApi = {
@@ -130,8 +138,10 @@ export const leaderboardApi = {
     request<{ items: DeveloperRank[]; scope: string; period: string; country?: string | null }>({
       url: `/leaderboard/developers${buildQuery({ period, country })}`,
     }),
-  projects: () => request<ProjectRank[]>({ url: "/leaderboard/projects" }),
-  countries: () => request<CountryRank[]>({ url: "/leaderboard/countries" }),
+  projects: (country?: string) =>
+    request<ProjectRank[]>({ url: `/leaderboard/projects${buildQuery({ country })}` }),
+  countries: (period = "week") =>
+    request<CountryRank[]>({ url: `/leaderboard/countries${buildQuery({ period })}` }),
 };
 
 export const missionsApi = {
@@ -155,6 +165,8 @@ export const apisDirectoryApi = {
   list: (params: ListParams = {}) =>
     request<Paginated<APIEntry>>({ url: `/apis${buildQuery({ ...params })}` }),
   get: (id: string) => request<APIEntry>({ url: `/apis/${id}` }),
+  update: (id: string, payload: Record<string, unknown>) =>
+    request<APIEntry>({ method: "PATCH", url: `/apis/${id}`, data: payload }),
   categories: () => request<Array<{ category: string; count: number }>>({ url: "/apis/categories" }),
 };
 
@@ -178,8 +190,21 @@ export const reputationApi = {
 export const moderationApi = {
   report: (payload: Record<string, unknown>) =>
     request<void>({ method: "POST", url: "/reports", data: payload }),
-  block: (username: string) =>
-    request<void>({ method: "POST", url: "/blocks", data: { username } }),
+  block: (username: string, reason?: string) =>
+    request<void>({ method: "POST", url: "/blocks", data: { username, reason } }),
+  blocks: () =>
+    request<Array<{ id: string; blocked_id: string; blocked_username: string }>>({ url: "/blocks" }),
+  unblock: (blockId: string) => request<void>({ method: "DELETE", url: `/blocks/${blockId}` }),
+};
+
+export const notificationsApi = {
+  list: (unreadOnly = false) =>
+    request<{ items: NotificationItem[]; total: number; unread_count: number }>({
+      url: `/notifications${buildQuery({ unread_only: unreadOnly })}`,
+    }),
+  read: (id: string) =>
+    request<NotificationItem>({ method: "POST", url: `/notifications/${id}/read` }),
+  readAll: () => request<{ updated: number }>({ method: "POST", url: "/notifications/read-all" }),
 };
 
 export const adminApi = {

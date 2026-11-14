@@ -6,23 +6,26 @@ development, tests and the demo seed. The ORM uses portable types (`Uuid`, `JSON
 
 Schema is versioned with Alembic. The initial migration
 (`migrations/versions/6d05700d8643_initial_schema.py`) creates **26 tables**, including
-`alembic_version`.
+`alembic_version`; `b7e21c9a4f10_spec_alignment.py` adds `solution_votes`,
+`contribution_requests.merged_at` and `users.reputation_frozen_until`, and renames the
+`sponsor` role to `company` (27 tables total).
 
 ## Tables
 
 | Table | Purpose |
 | --- | --- |
-| `users` | Developer accounts, GitHub identity, country, reputation cache, admin/demo flags |
-| `user_roles` | Declared roles (`developer`, `maintainer`, `mentor`, `student`, `sponsor`) |
+| `users` | Developer accounts, GitHub identity, country, reputation cache, admin/demo flags, temporary freeze window |
+| `user_roles` | Declared roles (`developer`, `project_creator`, `api_provider`, `company`) |
 | `user_skills` | Skills with level and years of experience |
 | `countries` | Reference countries with ISO code, French/English names, flag and region |
 | `projects` | Showcased projects, stack, collaboration mode, ownership status, counters |
 | `project_likes` / `project_passes` | Discovery interactions, unique per user and project |
-| `contribution_requests` | Requests to contribute with a domain and status workflow |
+| `contribution_requests` | Requests to contribute with a domain, review state and merge timestamp |
 | `project_feedback` | Structured feedback (concept / improvement / feature) with usefulness flag |
 | `ownership_verifications` | Repository-file challenge tokens and verification status |
 | `knowledge_problems` | Field problems with category, technology, API link and country |
 | `solutions` | Proposed solutions with code, steps, references and acceptance flag |
+| `solution_votes` | Community usefulness votes, unique per voter and solution (drives +2/+10) |
 | `field_reports` | Validated knowledge artefacts derived from accepted solutions |
 | `field_report_confirmations` | Same-country confirmations with comments |
 | `api_providers` / `api_entries` | API directory entries, coverage, status, integration notes |

@@ -2,8 +2,9 @@ import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, BadgeCheck, Info } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Flag, Info } from "lucide-react";
 
+import { ReportDialog } from "@/components/ReportDialog";
 import { Alert, Badge, Button, Card, ErrorState, SkeletonList, Textarea } from "@/components/ui";
 import { fieldReportsApi } from "@/services/api";
 import { useAuthStore } from "@/stores/auth-store";
@@ -18,6 +19,7 @@ export default function FieldReportDetailsPage() {
   const queryClient = useQueryClient();
   const [comment, setComment] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
 
   const report = useQuery({ queryKey: ["field-report", id], queryFn: () => fieldReportsApi.get(id) });
   const confirm = useMutation({
@@ -50,6 +52,11 @@ export default function FieldReportDetailsPage() {
           <Badge tone={data.status === "confirmed" ? "accent" : "primary"}>{data.status.replaceAll("_", " ")}</Badge>
           {data.country ? (
             <Badge tone="neutral">{data.country.flag_emoji ?? ""} {language === "fr" ? data.country.name_fr : data.country.name}</Badge>
+          ) : null}
+          {user ? (
+            <Button variant="ghost" size="sm" className="ml-auto" onClick={() => setReportOpen(true)} icon={<Flag className="size-4" aria-hidden="true" />}>
+              {t("common.report")}
+            </Button>
           ) : null}
         </div>
         <h1 className="mt-3 text-2xl font-bold text-primary-800">{data.title}</h1>
@@ -119,6 +126,8 @@ export default function FieldReportDetailsPage() {
           )}
         </Card>
       </div>
+
+      <ReportDialog open={reportOpen} onClose={() => setReportOpen(false)} targetType="field_report" targetId={id} />
     </div>
   );
 }

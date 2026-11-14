@@ -25,6 +25,7 @@ class ContributionRequest(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     domain: Mapped[str] = mapped_column(String(30), nullable=False)
     status: Mapped[str] = mapped_column(String(20), default=ContributionStatus.PENDING.value, nullable=False)
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    merged_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     conversation_id: Mapped[UUID | None] = mapped_column(Uuid(as_uuid=True))
 
     project = relationship("Project", lazy="selectin")

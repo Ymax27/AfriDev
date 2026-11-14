@@ -20,8 +20,19 @@ class APIEntryCreate(BaseModel):
     integration_notes: str | None = Field(default=None, max_length=4000)
 
 
+class APIEntryUpdate(BaseModel):
+    description: str | None = Field(default=None, min_length=20, max_length=4000)
+    category: str | None = Field(default=None, min_length=2, max_length=60)
+    countries: list[str] | None = Field(default=None, max_length=60)
+    documentation_url: str | None = Field(default=None, min_length=10, max_length=500)
+    pricing: str | None = Field(default=None, max_length=255)
+    api_status: str | None = Field(default=None, max_length=30)
+    integration_notes: str | None = Field(default=None, max_length=4000)
+
+
 class APIEntryOut(ORMModel):
     id: UUID
+    owner_id: UUID | None = None
     name: str
     provider_name: str
     slug: str

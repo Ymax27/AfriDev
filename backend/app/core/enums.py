@@ -7,7 +7,8 @@ class UserRoleType(StrEnum):
     DEVELOPER = "developer"
     PROJECT_CREATOR = "project_creator"
     API_PROVIDER = "api_provider"
-    SPONSOR = "sponsor"
+    COMPANY = "company"
+    SPONSOR = "company"  # legacy alias kept for older rows and imports
     ADMIN = "admin"
 
 

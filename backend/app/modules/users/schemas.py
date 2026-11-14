@@ -36,6 +36,9 @@ class UserProfileOut(UserOut):
     projects_count: int = 0
     accepted_solutions_count: int = 0
     field_reports_count: int = 0
+    verified_projects_count: int = 0
+    merged_contributions_count: int = 0
+    titles: list[str] = Field(default_factory=list)
 
 
 class ProfileUpdate(BaseModel):

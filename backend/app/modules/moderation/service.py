@@ -1,10 +1,10 @@
 """Content reporting and user blocking."""
 
 import logging
-from datetime import UTC
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ConflictError, NotFoundError
@@ -14,6 +14,27 @@ from app.modules.users.models import User, UserBlock
 logger = logging.getLogger("afridev.audit")
 
 
+def _is_uuid(value: str) -> bool:
+    try:
+        UUID(value)
+    except ValueError:
+        return False
+    return True
+
+
+async def blocked_between(db: AsyncSession, first_id: UUID, second_id: UUID) -> bool:
+    """True when either side blocked the other; used to gate chat and requests."""
+    result = await db.execute(
+        select(UserBlock.id).where(
+            or_(
+                (UserBlock.blocker_id == first_id) & (UserBlock.blocked_id == second_id),
+                (UserBlock.blocker_id == second_id) & (UserBlock.blocked_id == first_id),
+            )
+        )
+    )
+    return result.first() is not None
+
+
 async def create_report(
     db: AsyncSession, reporter: User, target_type: str, target_id: str, reason: str, details: str | None
 ) -> ContentReport:
@@ -21,6 +42,17 @@ async def create_report(
         reporter_id=reporter.id, target_type=target_type, target_id=target_id, reason=reason, details=details
     )
     db.add(report)
+
+    if target_type == "user":
+        # Reported accounts have their points frozen for a few days while moderation runs.
+        target = await db.get(User, UUID(target_id)) if _is_uuid(target_id) else None
+        if target is not None and target.id != reporter.id:
+            target.reputation_frozen_until = datetime.now(UTC) + timedelta(days=3)
+            logger.info(
+                "reported account reputation frozen",
+                extra={"user_id": str(target.id), "path": "/reports", "status_code": 201},
+            )
+
     await db.commit()
     await db.refresh(report)
     return report

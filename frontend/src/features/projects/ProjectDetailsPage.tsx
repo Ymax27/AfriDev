@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Check, ExternalLink, Code2, Heart, ShieldCheck, Star, Users } from "lucide-react";
+import { ArrowLeft, Check, ExternalLink, Code2, Flag, GitMerge, Heart, Pencil, ShieldCheck, Star, Trash2, Users } from "lucide-react";
 
 import {
   Alert,
@@ -14,6 +14,7 @@ import {
   EmptyState,
   ErrorState,
   Field,
+  Input,
   Modal,
   Select,
   SkeletonList,
@@ -21,6 +22,7 @@ import {
   TechnologyTag,
   Textarea,
 } from "@/components/ui";
+import { ReportDialog } from "@/components/ReportDialog";
 import { contributionsApi, projectsApi } from "@/services/api";
 import { useAuthStore } from "@/stores/auth-store";
 import { useUiStore } from "@/stores/ui-store";
@@ -34,12 +36,20 @@ export default function ProjectDetailsPage() {
   const { language } = useUiStore();
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [tab, setTab] = useState<"overview" | "feedback" | "contributions">("overview");
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [contributionOpen, setContributionOpen] = useState(false);
   const [feedback, setFeedback] = useState({ concept_answer: "", improvement_answer: "", feature_answer: "" });
   const [contribution, setContribution] = useState<{ message: string; domain: string }>({ message: "", domain: "code" });
   const [notice, setNotice] = useState<string | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [verifyOpen, setVerifyOpen] = useState(false);
+  const [verifyMethod, setVerifyMethod] = useState("repository_file");
+  const [verifyToken, setVerifyToken] = useState("");
+  const [challenge, setChallenge] = useState<{ id: string; token: string } | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({ name: "", description: "", collaboration_mode: "showcase" });
 
   const project = useQuery({ queryKey: ["project", id], queryFn: () => projectsApi.get(id) });
   const feedbackList = useQuery({ queryKey: ["project", id, "feedback"], queryFn: () => projectsApi.feedback(id) });
@@ -92,8 +102,42 @@ export default function ProjectDetailsPage() {
     },
   });
   const verifyStart = useMutation({
-    mutationFn: () => projectsApi.startOwnershipVerification(id),
-    onSuccess: () => setNotice(t("project.verificationStarted")),
+    mutationFn: () => projectsApi.startOwnershipVerification(id, verifyMethod),
+    onSuccess: (record) => {
+      setChallenge({ id: record.id, token: record.challenge_token });
+      setNotice(t("project.verificationStarted"));
+    },
+  });
+  const verifyConfirm = useMutation({
+    mutationFn: () =>
+      projectsApi.confirmOwnershipVerification(id, challenge?.id ?? "", verifyToken || undefined),
+    onSuccess: () => {
+      setVerifyOpen(false);
+      setChallenge(null);
+      setVerifyToken("");
+      setNotice(t("project.verificationDone"));
+      invalidate();
+    },
+  });
+  const updateProject = useMutation({
+    mutationFn: () => projectsApi.update(id, editForm),
+    onSuccess: () => {
+      setEditOpen(false);
+      setNotice(t("project.updated"));
+      invalidate();
+    },
+  });
+  const deleteProject = useMutation({
+    mutationFn: () => projectsApi.remove(id),
+    onSuccess: () => navigate("/dashboard"),
+  });
+  const mergeContribution = useMutation({
+    mutationFn: (contributionId: string) => contributionsApi.merged(contributionId),
+    onSuccess: () => {
+      setNotice(t("project.merged"));
+      void queryClient.invalidateQueries({ queryKey: ["project", id, "contributions"] });
+      invalidate();
+    },
   });
 
   if (project.isLoading) return <SkeletonList rows={4} />;
@@ -171,6 +215,36 @@ export default function ProjectDetailsPage() {
                 {t("project.feedback")}
               </Button>
             ) : null}
+            {isOwner ? (
+              <>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    setEditForm({ name: data.name, description: data.description, collaboration_mode: data.collaboration_mode });
+                    setEditOpen(true);
+                  }}
+                  icon={<Pencil className="size-4" aria-hidden="true" />}
+                >
+                  {t("common.edit")}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    if (window.confirm(t("project.deleteConfirm"))) deleteProject.mutate();
+                  }}
+                  loading={deleteProject.isPending}
+                  icon={<Trash2 className="size-4" aria-hidden="true" />}
+                >
+                  {t("common.delete")}
+                </Button>
+              </>
+            ) : user ? (
+              <Button variant="ghost" size="sm" onClick={() => setReportOpen(true)} icon={<Flag className="size-4" aria-hidden="true" />}>
+                {t("common.report")}
+              </Button>
+            ) : null}
           </div>
         </div>
 
@@ -195,7 +269,7 @@ export default function ProjectDetailsPage() {
             <ShieldCheck className="size-4" aria-hidden="true" />
             {t("project.ownership")} : {data.ownership_status === "verified" ? t("project.verified") : t("project.pending")}
             {data.ownership_status !== "verified" ? (
-              <Button size="sm" variant="secondary" className="ml-auto" onClick={() => verifyStart.mutate()} loading={verifyStart.isPending}>
+              <Button size="sm" variant="secondary" className="ml-auto" onClick={() => setVerifyOpen(true)}>
                 {t("project.verifyOwnership")}
               </Button>
             ) : null}
@@ -298,6 +372,18 @@ export default function ProjectDetailsPage() {
                       </Button>
                     </>
                   ) : null}
+                  {isOwner && item.status === "accepted" ? (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => mergeContribution.mutate(item.id)}
+                      loading={mergeContribution.isPending}
+                      icon={<GitMerge className="size-3.5" aria-hidden="true" />}
+                    >
+                      {t("project.markMerged")}
+                    </Button>
+                  ) : null}
+                  {item.merged_at ? <Badge tone="accent">{t("project.mergedBadge")}</Badge> : null}
                   {item.conversation_id ? (
                     <Link to="/messages" className="text-xs font-medium text-primary-700 hover:underline">
                       {t("nav.messages")}
@@ -374,6 +460,104 @@ export default function ProjectDetailsPage() {
           </Field>
           {contribution.message.length > 0 && contribution.message.trim().length < 20 ? (
             <p className="text-xs text-red-600">20</p>
+          ) : null}
+        </div>
+      </Modal>
+
+      <ReportDialog open={reportOpen} onClose={() => setReportOpen(false)} targetType="project" targetId={id} />
+
+      <Modal
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        title={t("project.editTitle")}
+        closeLabel={t("common.close")}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setEditOpen(false)}>{t("common.cancel")}</Button>
+            <Button onClick={() => updateProject.mutate()} loading={updateProject.isPending}>
+              {t("common.save")}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <Field label={t("project.name")} htmlFor="project-edit-name">
+            <Input
+              id="project-edit-name"
+              value={editForm.name}
+              onChange={(event) => setEditForm({ ...editForm, name: event.target.value })}
+            />
+          </Field>
+          <Field label={t("project.description")} htmlFor="project-edit-description">
+            <Textarea
+              id="project-edit-description"
+              rows={5}
+              value={editForm.description}
+              onChange={(event) => setEditForm({ ...editForm, description: event.target.value })}
+            />
+          </Field>
+          <Field label={t("project.mode")} hint={t("project.modeHelp")} htmlFor="project-edit-mode">
+            <Select
+              id="project-edit-mode"
+              value={editForm.collaboration_mode}
+              onChange={(event) => setEditForm({ ...editForm, collaboration_mode: event.target.value })}
+            >
+              {["showcase", "feedback", "open_to_contributors"].map((mode) => (
+                <option key={mode} value={mode}>{t(`modes.${mode}.title`)}</option>
+              ))}
+            </Select>
+          </Field>
+        </div>
+      </Modal>
+
+      <Modal
+        open={verifyOpen}
+        onClose={() => setVerifyOpen(false)}
+        title={t("project.verifyOwnership")}
+        closeLabel={t("common.close")}
+        footer={
+          challenge ? (
+            <>
+              <Button variant="secondary" onClick={() => setVerifyOpen(false)}>{t("common.cancel")}</Button>
+              <Button onClick={() => verifyConfirm.mutate()} loading={verifyConfirm.isPending}>
+                {t("project.verifyConfirm")}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="secondary" onClick={() => setVerifyOpen(false)}>{t("common.cancel")}</Button>
+              <Button onClick={() => verifyStart.mutate()} loading={verifyStart.isPending}>
+                {t("project.verifyStart")}
+              </Button>
+            </>
+          )
+        }
+      >
+        <div className="space-y-4">
+          <Field label={t("project.verifyMethod")} hint={t("project.verifyMethodHelp")} htmlFor="verify-method">
+            <Select id="verify-method" value={verifyMethod} onChange={(event) => setVerifyMethod(event.target.value)}>
+              <option value="repository_owner">{t("project.verifyRepositoryOwner")}</option>
+              <option value="repository_file">{t("project.verifyRepositoryFile")}</option>
+              <option value="domain">{t("project.verifyDomain")}</option>
+            </Select>
+          </Field>
+
+          {challenge ? (
+            <div className="space-y-3 rounded-xl bg-slate-50 p-3 text-sm">
+              <p className="text-muted">
+                {verifyMethod === "repository_owner"
+                  ? t("project.verifyOwnerHint")
+                  : verifyMethod === "domain"
+                    ? t("project.verifyDomainHint")
+                    : t("project.verifyFileHint")}
+              </p>
+              <p className="rounded-lg bg-white px-3 py-2 font-mono text-xs text-primary-800">{challenge.token}</p>
+              {verifyMethod !== "repository_owner" ? (
+                <Field label={t("project.verifyToken")} htmlFor="verify-token">
+                  <Input id="verify-token" value={verifyToken} onChange={(event) => setVerifyToken(event.target.value)} />
+                </Field>
+              ) : null}
+            </div>
           ) : null}
         </div>
       </Modal>

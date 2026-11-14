@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Trophy } from "lucide-react";
 
 import { Avatar, Badge, Card, EmptyState, ErrorState, ReputationBadge, SkeletonList } from "@/components/ui";
+import { ChatRoom } from "@/features/messaging/ChatRoom";
 import { countriesApi } from "@/services/api";
 import { useUiStore } from "@/stores/ui-store";
 
@@ -115,6 +116,12 @@ export default function CountryHubPage() {
             <p className="py-6 text-center text-sm text-muted">{t("countries.noData")}</p>
           )}
         </Card>
+
+        <ChatRoom
+          roomPath={`/ws/countries/${code.toUpperCase()}`}
+          title={t("rooms.countryTitle", { country: name })}
+          description={t("rooms.countryDescription")}
+        />
 
         <Card>
           <h2 className="mb-3 text-sm font-semibold text-primary-800">{t("countries.openMissions")}</h2>

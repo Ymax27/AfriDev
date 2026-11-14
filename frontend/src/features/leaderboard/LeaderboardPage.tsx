@@ -27,8 +27,16 @@ export default function LeaderboardPage() {
     queryFn: () => leaderboardApi.developers(period, country || undefined),
     enabled: tab === "developers",
   });
-  const projects = useQuery({ queryKey: ["leaderboard", "projects"], queryFn: leaderboardApi.projects, enabled: tab === "projects" });
-  const countryRanks = useQuery({ queryKey: ["leaderboard", "countries"], queryFn: leaderboardApi.countries, enabled: tab === "countries" });
+  const projects = useQuery({
+    queryKey: ["leaderboard", "projects", country],
+    queryFn: () => leaderboardApi.projects(country || undefined),
+    enabled: tab === "projects",
+  });
+  const countryRanks = useQuery({
+    queryKey: ["leaderboard", "countries", period],
+    queryFn: () => leaderboardApi.countries(period === "all" ? "week" : period),
+    enabled: tab === "countries",
+  });
 
   return (
     <div>
@@ -126,6 +134,24 @@ export default function LeaderboardPage() {
       ) : null}
 
       {tab === "projects" ? (
+        <>
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row">
+            <label className="sm:w-56">
+              <span className="mb-1 block text-xs font-medium text-muted">{t("leaderboard.country")}</span>
+              <CountrySelector
+                countries={countries ?? []}
+                value={country}
+                onChange={setCountry}
+                includeAll
+                allLabel={t("common.all")}
+                language={language}
+              />
+            </label>
+          </div>
+        </>
+      ) : null}
+
+      {tab === "projects" ? (
         projects.isLoading ? (
           <SkeletonList rows={5} />
         ) : projects.data && projects.data.length > 0 ? (
@@ -171,7 +197,17 @@ export default function LeaderboardPage() {
         countryRanks.isLoading ? (
           <SkeletonList rows={5} />
         ) : countryRanks.data && countryRanks.data.length > 0 ? (
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div>
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row">
+              <label className="sm:w-44">
+                <span className="mb-1 block text-xs font-medium text-muted">{t("leaderboard.period")}</span>
+                <Select value={period} onChange={(event) => setPeriod(event.target.value)}>
+                  <option value="week">{t("leaderboard.cupWeek")}</option>
+                  <option value="month">{t("leaderboard.month")}</option>
+                </Select>
+              </label>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {countryRanks.data.map((countryRank) => (
               <Card key={countryRank.country.code} className="flex items-center gap-3">
                 <span className="grid size-10 place-items-center rounded-xl bg-primary-50 text-sm font-bold text-primary-700">
@@ -182,13 +218,14 @@ export default function LeaderboardPage() {
                     {countryRank.country.flag_emoji ?? ""} {language === "fr" ? countryRank.country.name_fr : countryRank.country.name}
                   </Link>
                   <p className="text-xs text-muted">
-                    {countryRank.active_developers} {t("leaderboard.activeDevelopers")}
+                    {countryRank.active_developers} {t("leaderboard.activeDevelopers")} · {countryRank.week_points} pts
                   </p>
                 </div>
                 <Badge tone="accent">{countryRank.average_points.toFixed(1)}</Badge>
               </Card>
             ))}
-            <p className="text-xs text-muted sm:col-span-2 xl:col-span-3">{t("leaderboard.cupNote")}</p>
+            </div>
+            <p className="mt-3 text-xs text-muted">{t("leaderboard.cupNote")}</p>
           </div>
         ) : (
           <EmptyState title={t("leaderboard.empty")} />

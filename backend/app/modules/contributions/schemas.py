@@ -24,6 +24,7 @@ class ContributionOut(ORMModel):
     conversation_id: UUID | None = None
     created_at: datetime
     reviewed_at: datetime | None = None
+    merged_at: datetime | None = None
 
 
 class ContributionListOut(BaseModel):

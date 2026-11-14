@@ -125,6 +125,15 @@ API_ENTRIES = [
     ("Smile ID", "Smile Identity", "identity", "KYC, document verification and biometric checks for African IDs.", "https://docs.usesmileid.com", "Per-verification pricing", ["NG", "KE", "GH", "ZA", "RW"]),
     ("Google Maps Platform", "Google", "localization", "Geocoding, places and routing with African address coverage.", "https://developers.google.com/maps", "Monthly credit", ["CM", "NG", "KE", "GH", "SN", "CI", "ZA", "RW"]),
     ("Masakhane NLP Models", "Masakhane", "languages", "Open NLP models and datasets for African languages.", "https://github.com/masakhane-io", "Open source / free", ["ZA", "NG", "KE", "GH"]),
+    ("pawaPay", "pawaPay", "payments", "Single mobile money API covering 20+ African operators and countries.", "https://docs.pawapay.io", "Per-transaction fee", ["NG", "GH", "KE", "CM", "SN", "CI", "RW", "ZA"]),
+    ("Kkiapay", "Kkiapay", "payments", "Mobile money and card checkout for West African merchants.", "https://docs.kkiapay.me", "1.9% per transaction", ["SN", "CI", "CM", "BJ"]),
+    ("Infobip SMS", "Infobip", "communication", "Global SMS, WhatsApp and email delivery with African routes.", "https://www.infobip.com/docs/api", "Per-message pricing", ["ZA", "NG", "KE", "GH", "CM"]),
+    ("Beem Africa", "Beem", "communication", "SMS, USSD and airtime APIs widely used in East Africa.", "https://docs.beem.africa", "Pay-as-you-go", ["TZ", "KE", "UG", "RW"]),
+    ("Dojah", "Dojah", "identity", "KYC, document checks and AML screening for African markets.", "https://docs.dojah.io", "Per-verification pricing", ["NG", "GH", "KE", "ZA"]),
+    ("OkHi", "OkHi", "localization", "Address verification for African cities without reliable street addresses.", "https://docs.okhi.co", "Per-verification pricing", ["KE", "NG", "ZA"]),
+    ("PayDunya", "PayDunya", "billing", "Recurring billing and payment links for francophone Africa.", "https://paydunya.com/developers", "2% per transaction", ["SN", "CI", "CM", "BJ", "TG"]),
+    ("Lelapa AI InkubaLM", "Lelapa AI", "languages", "Small multilingual models for African languages and local use cases.", "https://lelapa.ai", "Commercial licence", ["ZA", "NG", "KE"]),
+    ("Khaya AI Translation", "Khaya AI", "languages", "Translation and speech APIs for Ghanaian and West African languages.", "https://khaya.ai/docs", "Usage based", ["GH", "NG", "CI"]),
 ]
 
 PROBLEM_TEMPLATES = [
@@ -253,9 +262,11 @@ async def seed_users(db, countries: dict[str, Country]) -> list[User]:
             reputation_points=0,
             level="newcomer",
         )
+        # Backdate accounts so demo signals satisfy the eligibility rules.
+        user.created_at = datetime.now(UTC) - timedelta(days=RNG.randint(45, 420))
         user.roles = [UserRole(role="developer"), UserRole(role="project_creator")]
         if index < 15:
-            user.roles.append(UserRole(role="sponsor"))
+            user.roles.append(UserRole(role="company"))
         if index > 53:
             user.roles.append(UserRole(role="api_provider"))
         user.skills = [
@@ -538,7 +549,38 @@ async def seed_contributions(db, users: list[User], projects: list[Project]) -> 
             maintainer = await db.get(User, project.creator_id)
             await contribution_service.accept_request(db, request, maintainer)
             accepted += 1
+            if index < 3:
+                await contribution_service.mark_merged(db, request, maintainer)
     return accepted
+
+
+async def seed_solution_votes(db, users: list[User], solutions) -> int:
+    """Community usefulness votes, which drive the +2/+10 reputation rule."""
+    count = 0
+    for index, (_problem, solution) in enumerate(solutions[:12]):
+        for offset in range(3):
+            voter = users[(index * 7 + offset + 3) % 55]
+            if voter.id == solution.author_id:
+                continue
+            try:
+                await knowledge_service.vote_solution(db, solution, voter)
+                count += 1
+            except Exception:
+                continue
+    return count
+
+
+async def mark_stale_reports(db) -> int:
+    """Age a few reports so the 90-day revalidation state is visible in the demo."""
+    reports = (
+        (await db.execute(select(FieldReport).order_by(FieldReport.created_at).limit(6)))
+        .scalars()
+        .all()
+    )
+    for report in reports[:4]:
+        report.last_validated_at = datetime.now(UTC) - timedelta(days=120)
+    await db.commit()
+    return await field_report_service.flag_stale_reports(db)
 
 
 async def seed_feedback(db, users: list[User], projects: list[Project]) -> int:
@@ -646,7 +688,12 @@ async def run(reset: bool) -> None:
         print(f"  problems: {len(problems)}, solutions: {len(solutions)}")
         accepted = await seed_accepted_work(db, users, solutions)
         confirmations = await seed_confirmations(db, users, accepted)
-        print(f"  accepted solutions: {len(accepted)}, confirmations: {confirmations}")
+        votes = await seed_solution_votes(db, users, solutions)
+        stale = await mark_stale_reports(db)
+        print(
+            f"  accepted solutions: {len(accepted)}, confirmations: {confirmations}, "
+            f"useful votes: {votes}, flagged for revalidation: {stale}"
+        )
         missions = await seed_missions(db, users, countries, api_entries)
         submissions = await seed_mission_submissions(db, users, missions)
         contributions = await seed_contributions(db, users, projects)

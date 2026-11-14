@@ -5,7 +5,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 
-from app.api.dependencies import CurrentUser, DbSession, Pagination
+from app.api.dependencies import CurrentUser, DbSession, OptionalUser, Pagination
 from app.core.exceptions import NotFoundError
 from app.modules.knowledge import service
 from app.modules.knowledge.models import Solution
@@ -58,16 +58,38 @@ async def create_problem(payload: ProblemCreate, user: CurrentUser, db: DbSessio
 
 
 @router.get("/{problem_id}", response_model=ProblemDetailOut)
-async def read_problem(problem_id: UUID, db: DbSession) -> ProblemDetailOut:
+async def read_problem(problem_id: UUID, db: DbSession, viewer: OptionalUser) -> ProblemDetailOut:
     problem = await service.get_problem(db, problem_id)
     solutions = await service.list_solutions(db, problem_id)
+    stats = await service.vote_stats(
+        db, [solution.id for solution in solutions], viewer.id if viewer else None
+    )
     base = ProblemOut.model_validate(problem)
     return ProblemDetailOut(
-        **base.model_dump(),
+        **base.model_dump(exclude={"solution_count", "has_accepted_solution"}),
         solution_count=len(solutions),
         has_accepted_solution=any(solution.is_accepted for solution in solutions),
-        solutions=[SolutionOut.model_validate(solution) for solution in solutions],
+        solutions=[
+            SolutionOut.model_validate(solution).model_copy(
+                update={
+                    "useful_votes": stats.get(solution.id, (0, False))[0],
+                    "voted_by_me": stats.get(solution.id, (0, False))[1],
+                }
+            )
+            for solution in solutions
+        ],
     )
+
+
+@router.post("/solutions/{solution_id}/vote", status_code=201)
+async def vote_solution(solution_id: UUID, user: CurrentUser, db: DbSession) -> dict[str, object]:
+    solution = await db.get(Solution, solution_id)
+    if solution is None:
+        raise NotFoundError("Solution not found")
+    vote = await service.vote_solution(db, solution, user)
+    stats = await service.vote_stats(db, [solution_id], user.id)
+    count, voted = stats.get(solution_id, (0, False))
+    return {"id": str(vote.id), "solution_id": str(solution_id), "useful_votes": count, "voted_by_me": voted}
 
 
 @router.post("/{problem_id}/solutions", response_model=SolutionOut, status_code=201)

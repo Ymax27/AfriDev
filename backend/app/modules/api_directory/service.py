@@ -6,9 +6,8 @@ from sqlalchemy import String, cast, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ForbiddenError, NotFoundError
-from app.core.utils import unique_slug
 from app.modules.api_directory.models import APIEntry
-from app.modules.api_directory.schemas import APIEntryCreate
+from app.modules.api_directory.schemas import APIEntryUpdate
 from app.modules.field_reports.models import FieldReport
 from app.modules.users.models import User
 
@@ -68,23 +67,17 @@ async def get_entry_by_slug(db: AsyncSession, slug: str) -> APIEntry:
     return entry
 
 
-async def create_entry(db: AsyncSession, owner: User, payload: APIEntryCreate) -> APIEntry:
-    if not (owner.is_admin or any(role.role in {"api_provider", "sponsor"} for role in owner.roles)):
-        raise ForbiddenError("Only API providers or admins can add API entries")
-    entry = APIEntry(
-        owner_id=owner.id,
-        name=payload.name,
-        provider_name=payload.provider_name,
-        slug=await unique_slug(db, APIEntry, f"{payload.name}-{payload.provider_name}"),
-        description=payload.description,
-        category=payload.category,
-        countries=[code.upper() for code in payload.countries],
-        documentation_url=payload.documentation_url,
-        pricing=payload.pricing,
-        api_status=payload.api_status,
-        integration_notes=payload.integration_notes,
-    )
-    db.add(entry)
+async def update_entry(
+    db: AsyncSession, entry: APIEntry, owner: User, payload: APIEntryUpdate
+) -> APIEntry:
+    """The directory is curated; a provider may only edit the sheet it owns."""
+    if not owner.is_admin and entry.owner_id != owner.id:
+        raise ForbiddenError("Only the API provider owning this sheet can edit it")
+    data = payload.model_dump(exclude_unset=True)
+    if "countries" in data and data["countries"] is not None:
+        data["countries"] = [code.upper() for code in data["countries"]]
+    for field, value in data.items():
+        setattr(entry, field, value)
     await db.commit()
     await db.refresh(entry)
     return entry

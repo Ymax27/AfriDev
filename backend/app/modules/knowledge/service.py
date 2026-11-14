@@ -11,7 +11,7 @@ from app.core.exceptions import ConflictError, ForbiddenError, NotFoundError, Va
 from app.core.utils import unique_slug
 from app.modules.countries.models import Country
 from app.modules.field_reports import service as field_report_service
-from app.modules.knowledge.models import KnowledgeProblem, Solution
+from app.modules.knowledge.models import KnowledgeProblem, Solution, SolutionVote
 from app.modules.knowledge.schemas import ProblemCreate, SolutionCreate
 from app.modules.notifications import service as notification_service
 from app.modules.projects.service import resolve_country
@@ -130,6 +130,77 @@ async def add_solution(
     await db.commit()
     await db.refresh(solution)
     return solution
+
+
+async def vote_stats(
+    db: AsyncSession, solution_ids: list[UUID], viewer_id: UUID | None
+) -> dict[UUID, tuple[int, bool]]:
+    """Usefulness votes per solution, plus whether the viewer already voted."""
+    if not solution_ids:
+        return {}
+    rows = (
+        await db.execute(
+            select(SolutionVote.solution_id, func.count(SolutionVote.id))
+            .where(SolutionVote.solution_id.in_(solution_ids))
+            .group_by(SolutionVote.solution_id)
+        )
+    ).all()
+    stats: dict[UUID, tuple[int, bool]] = {solution_id: (int(count), False) for solution_id, count in rows}
+    if viewer_id:
+        voted = (
+            await db.execute(
+                select(SolutionVote.solution_id).where(
+                    SolutionVote.voter_id == viewer_id, SolutionVote.solution_id.in_(solution_ids)
+                )
+            )
+        ).scalars().all()
+        for solution_id in voted:
+            count, _ = stats.get(solution_id, (0, False))
+            stats[solution_id] = (count, True)
+    for solution_id in solution_ids:
+        stats.setdefault(solution_id, (0, False))
+    return stats
+
+
+async def vote_solution(
+    db: AsyncSession, solution: Solution, voter: User
+) -> SolutionVote:
+    """Community usefulness vote: +2 for the author, capped at +10 per solution."""
+    if solution.author_id == voter.id:
+        raise ForbiddenError("You cannot vote for your own solution")
+    existing = (
+        await db.execute(
+            select(SolutionVote).where(
+                SolutionVote.solution_id == solution.id, SolutionVote.voter_id == voter.id
+            )
+        )
+    ).scalar_one_or_none()
+    if existing:
+        raise ConflictError("You already marked this solution as useful")
+    vote = SolutionVote(solution_id=solution.id, voter_id=voter.id, is_demo=solution.is_demo)
+    db.add(vote)
+    if reputation_service.is_eligible_account(voter):
+        # Brand-new accounts can vote, but only seasoned ones move the reputation ledger.
+        await reputation_service.award(
+            db,
+            user_id=solution.author_id,
+            actor_id=voter.id,
+            action_type=ReputationAction.USEFUL_VOTE.value,
+            reference_type="solution_vote",
+            reference_id=f"{solution.id}:{voter.id}",
+            is_demo=solution.is_demo,
+        )
+    await notification_service.notify(
+        db,
+        user_id=solution.author_id,
+        type="solution_voted_useful",
+        title="Your solution was marked useful",
+        body=f"{voter.username} found your solution useful.",
+        link=f"/knowledge/{solution.problem_id}",
+    )
+    await db.commit()
+    await db.refresh(vote)
+    return vote
 
 
 async def accept_solution(

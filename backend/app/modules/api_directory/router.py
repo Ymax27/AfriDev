@@ -9,9 +9,9 @@ from app.api.dependencies import CurrentUser, DbSession, Pagination
 from app.modules.api_directory import service
 from app.modules.api_directory.schemas import (
     APICategoryOut,
-    APIEntryCreate,
     APIEntryListOut,
     APIEntryOut,
+    APIEntryUpdate,
 )
 
 router = APIRouter(prefix="/apis", tags=["api-directory"])
@@ -43,9 +43,16 @@ async def list_categories(db: DbSession) -> list[APICategoryOut]:
     return [APICategoryOut(category=name, count=count) for name, count in await service.categories(db)]
 
 
-@router.post("", response_model=APIEntryOut, status_code=201)
-async def create_api(payload: APIEntryCreate, user: CurrentUser, db: DbSession) -> APIEntryOut:
-    return APIEntryOut.model_validate(await service.create_entry(db, user, payload))
+@router.patch("/{entry_id}", response_model=APIEntryOut)
+async def update_api(
+    entry_id: UUID, payload: APIEntryUpdate, user: CurrentUser, db: DbSession
+) -> APIEntryOut:
+    entry = await service.get_entry(db, entry_id)
+    updated = await service.update_entry(db, entry, user, payload)
+    counts = await service.related_report_counts(db, [updated.id])
+    return APIEntryOut.model_validate(updated).model_copy(
+        update={"related_field_reports": counts.get(updated.id, 0)}
+    )
 
 
 @router.get("/{entry_id}", response_model=APIEntryOut)

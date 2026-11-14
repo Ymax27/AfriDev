@@ -35,6 +35,15 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         "starting %s in %s mode", settings.app_name, settings.app_env,
         extra={"path": "startup", "status_code": 200},
     )
+    try:
+        from app.modules.field_reports.service import flag_stale_reports
+
+        async with SessionLocal() as session:
+            flagged = await flag_stale_reports(session)
+        if flagged:
+            logger.info("field reports flagged for revalidation: %s", flagged)
+    except Exception:  # pragma: no cover - startup must not fail on a maintenance pass
+        logger.exception("field report revalidation pass failed")
     yield
     logger.info("shutting down", extra={"path": "shutdown", "status_code": 200})
 

@@ -38,7 +38,9 @@ class CountryRankOut(BaseModel):
     country: CountryOut
     active_developers: int
     total_points: int
+    week_points: int = 0
     average_points: float
+    period: str = "week"
 
 
 class DeveloperLeaderboardOut(BaseModel):

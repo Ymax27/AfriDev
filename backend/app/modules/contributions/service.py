@@ -11,6 +11,7 @@ from app.core.exceptions import ConflictError, ForbiddenError, NotFoundError, Va
 from app.modules.contributions.models import ContributionRequest
 from app.modules.contributions.schemas import ContributionCreate
 from app.modules.messaging.models import Conversation, ConversationMember, Message
+from app.modules.moderation.service import blocked_between
 from app.modules.notifications import service as notification_service
 from app.modules.projects.models import Project
 from app.modules.reputation import service as reputation_service
@@ -24,6 +25,8 @@ async def create_request(
         raise ForbiddenError("You cannot request to contribute to your own project")
     if project.collaboration_mode != "open_to_contributors":
         raise ForbiddenError("This project is not open to contributors")
+    if await blocked_between(db, project.creator_id, requester.id):
+        raise ForbiddenError("You cannot contact this maintainer")
     existing = (
         await db.execute(
             select(ContributionRequest).where(
@@ -147,6 +150,7 @@ async def mark_merged(
     project = await _ensure_maintainer(db, request, user)
     if request.status != ContributionStatus.ACCEPTED.value:
         raise ValidationError("Only accepted contributions can be marked as merged")
+    request.merged_at = datetime.now(UTC)
     await reputation_service.award(
         db,
         user_id=request.requester_id,
@@ -156,7 +160,6 @@ async def mark_merged(
         reference_id=str(request.id),
         is_demo=project.is_demo,
     )
-    project.ownership_status = project.ownership_status  # keep value explicit for clarity
     await db.commit()
     await db.refresh(request)
     return request

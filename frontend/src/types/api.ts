@@ -45,6 +45,9 @@ export interface UserProfile extends User {
   projects_count: number;
   accepted_solutions_count: number;
   field_reports_count: number;
+  verified_projects_count: number;
+  merged_contributions_count: number;
+  titles: string[];
 }
 
 export type CollaborationMode = "showcase" | "feedback" | "open_to_contributors";
@@ -98,6 +101,7 @@ export interface Contribution {
   conversation_id?: string | null;
   created_at: string;
   reviewed_at?: string | null;
+  merged_at?: string | null;
 }
 
 export interface Solution {
@@ -111,6 +115,8 @@ export interface Solution {
   accepted_at?: string | null;
   author: UserSummary;
   created_at: string;
+  useful_votes: number;
+  voted_by_me: boolean;
 }
 
 export interface Problem {
@@ -187,6 +193,7 @@ export interface MissionSubmission {
 
 export interface APIEntry {
   id: string;
+  owner_id?: string | null;
   name: string;
   provider_name: string;
   slug: string;
@@ -258,7 +265,9 @@ export interface CountryRank {
   country: Country;
   active_developers: number;
   total_points: number;
+  week_points: number;
   average_points: number;
+  period: string;
 }
 
 export interface ConversationMember {

@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError, ValidationError
 from app.core.utils import level_for_points
+from app.modules.contributions.models import ContributionRequest
 from app.modules.countries.models import Country
 from app.modules.field_reports.models import FieldReport
 from app.modules.knowledge.models import Solution
@@ -14,7 +15,9 @@ from app.modules.projects.models import Project
 from app.modules.users.models import User, UserRole, UserSkill
 from app.modules.users.schemas import ProfileUpdate, UserOut, UserProfileOut
 
-ALLOWED_ROLES = {"developer", "project_creator", "api_provider", "sponsor", "admin"}
+ALLOWED_ROLES = {"developer", "project_creator", "api_provider", "company", "admin"}
+# Older clients and demo rows used these labels.
+ROLE_ALIASES = {"sponsor": "company", "maintainer": "project_creator", "mentor": "developer", "student": "developer"}
 
 
 async def get_by_username(db: AsyncSession, username: str) -> User:
@@ -46,12 +49,45 @@ async def build_profile(db: AsyncSession, user: User) -> UserProfileOut:
     reports = int(
         (await db.execute(select(func.count(FieldReport.id)).where(FieldReport.author_id == user.id))).scalar_one()
     )
+    verified_projects = int(
+        (
+            await db.execute(
+                select(func.count(Project.id)).where(
+                    Project.creator_id == user.id, Project.ownership_status == "verified"
+                )
+            )
+        ).scalar_one()
+    )
+    merged_contributions = int(
+        (
+            await db.execute(
+                select(func.count(ContributionRequest.id)).where(
+                    ContributionRequest.requester_id == user.id,
+                    ContributionRequest.merged_at.is_not(None),
+                )
+            )
+        ).scalar_one()
+    )
+    titles: list[str] = []
+    if solutions >= 1:
+        titles.append("first_solution")
+    if reports >= 3:
+        titles.append("field_cartographer")
+    if verified_projects >= 3:
+        titles.append("verified_builder")
+    if merged_contributions >= 1:
+        titles.append("team_player")
+    if user.reputation_points >= 500:
+        titles.append("expert")
     base = UserOut.model_validate(user)
     return UserProfileOut(
         **base.model_dump(),
         projects_count=projects,
         accepted_solutions_count=solutions,
         field_reports_count=reports,
+        verified_projects_count=verified_projects,
+        merged_contributions_count=merged_contributions,
+        titles=titles,
     )
 
 
@@ -74,7 +110,8 @@ async def update_profile(db: AsyncSession, user: User, payload: ProfileUpdate) -
         setattr(user, field, value)
 
     if roles is not None:
-        cleaned = {role for role in roles if role in ALLOWED_ROLES}
+        cleaned = {ROLE_ALIASES.get(role, role) for role in roles}
+        cleaned = {role for role in cleaned if role in ALLOWED_ROLES}
         if user.is_admin:
             cleaned.add("admin")
         else:

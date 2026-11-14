@@ -1,7 +1,12 @@
 """Project publication, discovery and interaction services."""
 
+import asyncio
+import json
 import secrets
 from datetime import UTC, datetime
+from urllib import error as urlerror
+from urllib import request as urlrequest
+from urllib.parse import urlparse
 from uuid import UUID
 
 from sqlalchemy import String, cast, func, select
@@ -312,9 +317,52 @@ async def list_feedback(db: AsyncSession, project: Project) -> list[ProjectFeedb
     return list(result.scalars().all())
 
 
+VERIFICATION_METHODS = {"repository_file", "repository_owner", "domain"}
+
+
+def _github_slug(repository_url: str) -> tuple[str, str] | None:
+    parsed = urlparse(repository_url)
+    if "github.com" not in parsed.netloc:
+        return None
+    parts = [part for part in parsed.path.split("/") if part]
+    if len(parts) < 2:
+        return None
+    return parts[0], parts[1].removesuffix(".git")
+
+
+def _fetch_json(url: str) -> dict | None:
+    try:
+        req = urlrequest.Request(url, headers={"User-Agent": "AfriDev-Hub", "Accept": "application/vnd.github+json"})
+        with urlrequest.urlopen(req, timeout=8) as response:  # noqa: S310 - fixed https host from config
+            return json.loads(response.read().decode("utf-8"))
+    except (urlerror.URLError, TimeoutError, ValueError, json.JSONDecodeError):
+        return None
+
+
+def _fetch_text(url: str) -> str | None:
+    try:
+        req = urlrequest.Request(url, headers={"User-Agent": "AfriDev-Hub"})
+        with urlrequest.urlopen(req, timeout=8) as response:  # noqa: S310 - user supplied project URL
+            return response.read(200_000).decode("utf-8", errors="ignore")
+    except (urlerror.URLError, TimeoutError, ValueError):
+        return None
+
+
+async def _repository_owner_login(repository_url: str) -> str | None:
+    slug = _github_slug(repository_url)
+    if slug is None:
+        return None
+    data = await asyncio.to_thread(_fetch_json, f"https://api.github.com/repos/{slug[0]}/{slug[1]}")
+    owner = (data or {}).get("owner") or {}
+    login = owner.get("login")
+    return login.lower() if isinstance(login, str) else None
+
+
 async def start_ownership_verification(
     db: AsyncSession, project: Project, user: User, method: str
 ) -> OwnershipVerification:
+    if method not in VERIFICATION_METHODS:
+        raise ValidationError("Unsupported verification method")
     if project.creator_id != user.id:
         raise ForbiddenError("Only the project owner can request verification")
     if project.ownership_status == VerificationStatus.VERIFIED.value:
@@ -333,17 +381,39 @@ async def start_ownership_verification(
 
 
 async def confirm_ownership_verification(
-    db: AsyncSession, verification: OwnershipVerification, user: User, token: str
+    db: AsyncSession, verification: OwnershipVerification, user: User, token: str | None
 ) -> OwnershipVerification:
     project = await get_project(db, verification.project_id)
     if project.creator_id != user.id and not user.is_admin:
         raise ForbiddenError("Only the project owner can confirm verification")
     if verification.status != VerificationStatus.PENDING.value:
         raise ConflictError("Verification already resolved")
-    if token.strip() != verification.challenge_token:
+
+    ok = False
+    if verification.method == "repository_owner":
+        if not project.repository_url:
+            raise ValidationError("Add the GitHub repository URL first")
+        if not user.github_login:
+            raise ForbiddenError("Link your GitHub account before using this method")
+        owner = await _repository_owner_login(project.repository_url)
+        ok = owner is not None and owner == user.github_login.lower()
+    elif verification.method == "domain":
+        target = project.demo_url or user.website_url
+        if not target:
+            raise ValidationError("Add a project or profile URL for domain verification")
+        if not token:
+            raise ValidationError("Paste the verification token found on your site")
+        page = await asyncio.to_thread(_fetch_text, target)
+        ok = bool(page and verification.challenge_token in page)
+    else:
+        ok = bool(token and token.strip() == verification.challenge_token)
+
+    if not ok:
         verification.status = VerificationStatus.REJECTED.value
+        verification.notes = "Verification could not be proven"
         await db.commit()
-        raise ValidationError("Verification token does not match the challenge")
+        raise ValidationError("Verification could not be proven")
+
     verification.status = VerificationStatus.VERIFIED.value
     verification.verified_at = datetime.now(UTC)
     project.ownership_status = VerificationStatus.VERIFIED.value

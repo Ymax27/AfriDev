@@ -5,18 +5,29 @@ import { ArrowRight, MapPin } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Badge, Card, ErrorState, SkeletonList } from "@/components/ui";
+import { AfricaMap } from "@/features/countries/AfricaMap";
 import { useCountries } from "@/hooks/useCountries";
-import { countriesApi } from "@/services/api";
+import { countriesApi, leaderboardApi } from "@/services/api";
 import { useUiStore } from "@/stores/ui-store";
 
 export default function CountriesPage() {
   const { t } = useTranslation();
   const { language } = useUiStore();
   const countries = useCountries();
+  const activity = useQuery({ queryKey: ["leaderboard", "countries", "week"], queryFn: () => leaderboardApi.countries("week") });
+  const activityByCode = Object.fromEntries(
+    (activity.data ?? []).map((item) => [item.country.code, item.week_points]),
+  );
 
   return (
     <div>
       <PageHeader title={t("countries.title")} description={t("countries.subtitle")} />
+
+      {countries.data && countries.data.length > 0 ? (
+        <div className="mb-5">
+          <AfricaMap countries={countries.data} activity={activityByCode} />
+        </div>
+      ) : null}
 
       {countries.isLoading ? (
         <SkeletonList rows={3} />

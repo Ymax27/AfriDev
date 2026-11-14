@@ -64,6 +64,17 @@ afridev-hub/
   session cookie authentication and membership checks before joining a room.
 - **MCP**: a read-only server exposing `search_field_reports`, `search_open_projects` and
   `search_api_directory` over stdio.
+- **Country Cup**: country ranking uses the average points earned by active members over
+  the period (weekly by default) so small countries stay competitive.
+- **Project traction**: only likes from eligible accounts (7+ days old, active) are
+  weighted, together with accepted contributors and useful feedback; visits and GitHub
+  stars are capped.
+- **Ownership verification**: three methods — GitHub repository ownership (compared with
+  the linked GitHub login), a challenge file in the repository, or a token published on
+  the project domain.
+- **Frontend**: mobile-first with an Africa activity map generated from Natural Earth
+  polygons, contextual WebSocket rooms (country and mission), in-app notifications and a
+  low-bandwidth mode wired to the browser's data-saver signal.
 
 ## Request lifecycle
 
@@ -81,10 +92,17 @@ afridev-hub/
 
 The reputation ledger is append-only. A unique constraint on
 `(user_id, action_type, reference_type, reference_id)` makes each award idempotent, and
-caps limit farming: 100 points/day per user, 3 verified publications/day, 10 points from
-useful votes/day, 5 rewarded confirmations per field report. Self-award is rejected.
-Balances cached on `users.reputation_points` are derived from the ledger and can be
-recalculated from scratch by an administrator.
+caps limit farming: 100 points/day per user, 3 verified publications, 10 points from
+useful votes **per solution**, 5 rewarded confirmations per field report. Self-award is
+rejected.
+
+Additional anti-cheat rules: votes and confirmations only move the ledger for accounts
+older than 7 days that are active and not frozen; repeated exchanges between the same two
+accounts lose value (`points / (1 + prior reciprocal awards)`, minimum 1); an account
+awarding 20 transactions within 10 minutes is treated as a burst and blocked; a reported
+account has its points frozen for 3 days automatically. Balances cached on
+`users.reputation_points` are derived from the ledger and can be recalculated from scratch
+by an administrator.
 
 ## Deployment topology
 

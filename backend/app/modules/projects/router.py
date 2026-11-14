@@ -12,6 +12,7 @@ from app.modules.projects.models import OwnershipVerification, ProjectFeedback
 from app.modules.projects.schemas import (
     FeedbackCreate,
     FeedbackOut,
+    OwnershipConfirmRequest,
     OwnershipVerificationOut,
     OwnershipVerifyRequest,
     ProjectCreate,
@@ -177,10 +178,14 @@ async def start_ownership_verification(
     response_model=OwnershipVerificationOut,
 )
 async def confirm_ownership_verification(
-    project_id: UUID, verification_id: UUID, user: CurrentUser, db: DbSession
+    project_id: UUID,
+    verification_id: UUID,
+    payload: OwnershipConfirmRequest,
+    user: CurrentUser,
+    db: DbSession,
 ) -> OwnershipVerificationOut:
     record = await db.get(OwnershipVerification, verification_id)
     if record is None or record.project_id != project_id:
         raise NotFoundError("Verification request not found")
-    updated = await service.confirm_ownership_verification(db, record, user, record.challenge_token)
+    updated = await service.confirm_ownership_verification(db, record, user, payload.token)
     return OwnershipVerificationOut.model_validate(updated)

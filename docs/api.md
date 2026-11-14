@@ -97,12 +97,18 @@ production.
 | GET | `/field-reports/{id}/confirmations` | Confirmations list |
 | POST | `/field-reports/{id}/confirm` | Same-country confirmation (idempotent, capped rewards) |
 
+## Knowledge votes
+
+| Method | Path | Description |
+| --- | --- | --- |
+| POST | `/knowledge/solutions/{id}/vote` | Mark a solution useful: +2 to its author, capped at +10 per solution. Only accounts older than 7 days move the ledger. |
+
 ## Missions
 
 | Method | Path | Description |
 | --- | --- | --- |
 | GET | `/missions` | Open missions |
-| POST | `/missions` | Create a sponsored mission |
+| POST | `/missions` | Publish a mission (API provider, company or admin only) |
 | GET | `/missions/{id}` | Mission detail |
 | POST | `/missions/{id}/submissions` | Submit a solution |
 | GET | `/missions/{id}/submissions` | Sponsor review list |
@@ -114,7 +120,7 @@ production.
 | --- | --- | --- |
 | GET | `/apis` | Search entries (`q`, `category`, `country`) |
 | GET | `/apis/categories` | Categories with counts |
-| POST | `/apis` | Contribute an entry |
+| PATCH | `/apis/{id}` | Edit a sheet (its provider owner or an admin) — the directory is curated, no public creation |
 | GET | `/apis/{id}` | Entry detail with related field reports count |
 
 ## Leaderboards
@@ -123,7 +129,7 @@ production.
 | --- | --- | --- |
 | GET | `/leaderboard/developers?period=all\|month\|week&country=SN` | Ranked developers |
 | GET | `/leaderboard/projects` | Weighted project score |
-| GET | `/leaderboard/countries` | Country Cup (average points per active developer) |
+| GET | `/leaderboard/countries?period=week\|month` | Country Cup: average points per active member over the period (weekly by default) |
 
 Demo accounts are included when `DEMO_MODE` is on; pass `include_demo=false` where
 supported to exclude them.
@@ -137,6 +143,7 @@ supported to exclude them.
 | POST | `/conversations/{id}/messages` | Send a message |
 | GET | `/notifications` | Notifications and unread count |
 | POST | `/notifications/{id}/read` | Mark as read |
+| POST | `/notifications/read-all` | Mark every notification as read |
 
 ## Moderation and admin
 
@@ -153,6 +160,7 @@ supported to exclude them.
 | GET | `/admin/reports` | Moderation queue |
 | POST | `/admin/reports/{id}/resolve` | Resolve or dismiss |
 | POST | `/admin/reputation/recalculate` | Rebuild cached balances from the ledger |
+| POST | `/admin/field-reports/revalidate` | Flag field reports untouched for 90 days (also runs at startup) |
 | POST | `/admin/demo/purge` | Delete demo rows only |
 
 ## Health

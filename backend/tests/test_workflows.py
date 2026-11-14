@@ -233,22 +233,34 @@ async def test_country_hub_and_leaderboards_render(client):
 
 @pytest.mark.asyncio
 async def test_api_directory_and_mcp_public_tools(client, db):
+    from app.modules.api_directory.models import APIEntry
+
     await login(client, "api-admin", as_admin=True)
-    created = await client.post(
+    # The directory is curated: providers edit their sheet, nobody creates entries through the API.
+    read_only = await client.post(
         "/api/v1/apis",
-        json={
-            "name": "Test Payments API",
-            "provider_name": "Test Provider",
-            "description": "A payments API used to verify directory behaviour.",
-            "category": "payments",
-            "countries": ["CM", "NG"],
-            "documentation_url": "https://docs.example.com",
-        },
+        json={"name": "Blocked", "provider_name": "Blocked", "category": "payments"},
     )
-    assert created.status_code == 201, created.text
+    assert read_only.status_code == 405
+
+    entry = APIEntry(
+        name="Test Payments API",
+        provider_name="Test Provider",
+        slug="test-payments-api",
+        description="A payments API used to verify directory behaviour.",
+        category="payments",
+        countries=["CM", "NG"],
+        documentation_url="https://docs.example.com",
+    )
+    db.add(entry)
+    await db.commit()
 
     directory = await client.get("/api/v1/apis", params={"q": "payments"})
     assert directory.json()["total"] == 1
+
+    updated = await client.patch(f"/api/v1/apis/{entry.id}", json={"pricing": "Free tier"})
+    assert updated.status_code == 200, updated.text
+    assert updated.json()["pricing"] == "Free tier"
 
     from app.mcp.tools.search_api_directory import search_api_directory
     from app.mcp.tools.search_field_reports import search_field_reports
@@ -263,6 +275,69 @@ async def test_api_directory_and_mcp_public_tools(client, db):
 
     report_results = await search_field_reports(db, country="CM", limit=5)
     assert report_results["tool"] == "search_field_reports"
+
+
+@pytest.mark.asyncio
+async def test_useful_solution_votes_award_two_points_capped_at_ten(client, db):
+    from datetime import UTC, datetime, timedelta
+
+    from app.modules.users.models import User
+
+    await login(client, "vote-author")
+    problem = await client.post(
+        "/api/v1/knowledge",
+        json={
+            "title": "Useful vote accounting across the community",
+            "description": "Community votes should award two points each and stop at ten per solution.",
+            "category": "backend",
+        },
+    )
+    problem_id = problem.json()["id"]
+    await login(client, "vote-solver")
+    solution_id = (
+        await client.post(
+            f"/api/v1/knowledge/{problem_id}/solutions",
+            json={"explanation": "A complete explanation long enough for the schema to accept it."},
+        )
+    ).json()["id"]
+
+    # A brand-new account may vote, but its vote does not move the ledger yet.
+    await login(client, "fresh-voter")
+    first = await client.post(f"/api/v1/knowledge/solutions/{solution_id}/vote")
+    assert first.status_code == 201, first.text
+    assert first.json()["useful_votes"] == 1
+    reputation = await client.get("/api/v1/reputation/me")
+    assert reputation.status_code == 200
+
+    # Self-votes are refused.
+    await login(client, "vote-solver")
+    assert (await client.post(f"/api/v1/knowledge/solutions/{solution_id}/vote")).status_code == 403
+
+    # Seasoned voters award two points each, up to the ten-point cap.
+    for index in range(6):
+        await login(client, f"seasoned-voter-{index}")
+        row = (
+            await db.execute(select(User).where(User.username == f"seasoned-voter-{index}"))
+        ).scalar_one()
+        row.created_at = datetime.now(UTC) - timedelta(days=30)
+        await db.commit()
+        voted = await client.post(f"/api/v1/knowledge/solutions/{solution_id}/vote")
+        assert voted.status_code == 201, voted.text
+
+    await login(client, "vote-solver")
+    detail = await client.get("/api/v1/reputation/me")
+    assert detail.json()["reputation_points"] == 10
+
+
+@pytest.mark.asyncio
+async def test_country_cup_uses_weekly_average_per_active_member(client):
+    await login(client, "cup-dev")
+    response = await client.get("/api/v1/leaderboard/countries")
+    assert response.status_code == 200
+    for item in response.json():
+        assert item["period"] == "week"
+        assert "week_points" in item
+        assert item["average_points"] >= 0
 
 
 @pytest.mark.asyncio

@@ -1,7 +1,7 @@
 """Auditable reputation ledger and award rules."""
 
 import logging
-from datetime import UTC, datetime, time
+from datetime import UTC, datetime, time, timedelta
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -28,12 +28,40 @@ POINTS: dict[str, int] = {
 DAILY_POINT_CAP = 100
 MAX_VERIFIED_PUBLICATIONS = 3
 MAX_CONFIRMATION_AWARDS_PER_REPORT = 5
-USEFUL_VOTE_DAILY_CAP = 10
+USEFUL_VOTE_CAP_PER_SOLUTION = 10
+
+# Anti-cheat: an account must be a few days old before its votes and confirmations count.
+ELIGIBLE_ACCOUNT_DAYS = 7
+# Renderless decay when two accounts keep rewarding each other.
+MUTUAL_DECAY_WINDOW_DAYS = 30
+# Burst detection: one account cannot award points to dozens of people within minutes.
+BURST_WINDOW_MINUTES = 10
+BURST_MAX_AWARDS = 20
 
 
 def _day_start() -> datetime:
     now = datetime.now(UTC)
     return datetime.combine(now.date(), time.min, tzinfo=UTC)
+
+
+def _aware(value: datetime) -> datetime:
+    return value if value.tzinfo else value.replace(tzinfo=UTC)
+
+
+def is_frozen(user: User, now: datetime | None = None) -> bool:
+    moment = now or datetime.now(UTC)
+    if user.reputation_frozen:
+        return True
+    until = user.reputation_frozen_until
+    return bool(until and _aware(until) > moment)
+
+
+def is_eligible_account(user: User, now: datetime | None = None) -> bool:
+    """Accounts need a linked history and a minimum age before their signals count."""
+    moment = now or datetime.now(UTC)
+    if not user.is_active or is_frozen(user, moment):
+        return False
+    return moment - _aware(user.created_at) >= timedelta(days=ELIGIBLE_ACCOUNT_DAYS)
 
 
 async def _points_today(db: AsyncSession, user_id: UUID) -> int:
@@ -61,6 +89,42 @@ async def has_award(
     return existing.scalar_one_or_none() is not None
 
 
+async def _mutual_decay(db: AsyncSession, user_id: UUID, actor_id: UUID) -> int:
+    """Return how many times this pair already rewarded each other in both directions."""
+    since = datetime.now(UTC) - timedelta(days=MUTUAL_DECAY_WINDOW_DAYS)
+    reciprocal = await db.execute(
+        select(func.count(ReputationTransaction.id)).where(
+            ReputationTransaction.user_id == actor_id,
+            ReputationTransaction.actor_id == user_id,
+            ReputationTransaction.created_at >= since,
+        )
+    )
+    return int(reciprocal.scalar_one())
+
+
+async def _actor_is_bursting(db: AsyncSession, actor_id: UUID) -> bool:
+    since = datetime.now(UTC) - timedelta(minutes=BURST_WINDOW_MINUTES)
+    count = await db.execute(
+        select(func.count(ReputationTransaction.id)).where(
+            ReputationTransaction.actor_id == actor_id,
+            ReputationTransaction.created_at >= since,
+        )
+    )
+    return int(count.scalar_one()) >= BURST_MAX_AWARDS
+
+
+async def _solution_vote_points(db: AsyncSession, reference_id: str) -> int:
+    solution_id = reference_id.split(":", 1)[0]
+    total = await db.execute(
+        select(func.coalesce(func.sum(ReputationTransaction.points), 0)).where(
+            ReputationTransaction.action_type == ReputationAction.USEFUL_VOTE.value,
+            ReputationTransaction.reference_id.like(f"{solution_id}:%"),
+            ReputationTransaction.status == ReputationStatus.APPROVED.value,
+        )
+    )
+    return int(total.scalar_one())
+
+
 async def award(
     db: AsyncSession,
     *,
@@ -82,7 +146,7 @@ async def award(
     if actor_id is not None and actor_id == user_id:
         logger.info("blocked self-award", extra={"user_id": str(user_id)})
         return None
-    if user.reputation_frozen or not user.is_active:
+    if is_frozen(user) or not user.is_active:
         return None
     if await has_award(
         db, user_id=user_id, action_type=action_type, reference_type=reference_type, reference_id=reference_id
@@ -104,14 +168,8 @@ async def award(
             return None
 
     if action_type == ReputationAction.USEFUL_VOTE.value:
-        today_votes = await db.execute(
-            select(func.coalesce(func.sum(ReputationTransaction.points), 0)).where(
-                ReputationTransaction.user_id == user_id,
-                ReputationTransaction.action_type == action_type,
-                ReputationTransaction.created_at >= _day_start(),
-            )
-        )
-        if int(today_votes.scalar_one()) >= USEFUL_VOTE_DAILY_CAP:
+        if await _solution_vote_points(db, reference_id) >= USEFUL_VOTE_CAP_PER_SOLUTION:
+            logger.info("solution vote cap reached", extra={"reference_id": reference_id})
             return None
 
     if action_type == ReputationAction.FIELD_REPORT_CONFIRMATION.value:
@@ -124,6 +182,15 @@ async def award(
         )
         if int(awards.scalar_one()) >= MAX_CONFIRMATION_AWARDS_PER_REPORT:
             return None
+
+    if actor_id is not None:
+        if await _actor_is_bursting(db, actor_id):
+            logger.warning("blocked suspicious award burst", extra={"actor_id": str(actor_id)})
+            return None
+        mutual = await _mutual_decay(db, user_id, actor_id)
+        if mutual:
+            # Diminishing returns between two accounts that keep rewarding each other.
+            award_points = max(1, round(award_points / (1 + mutual)))
 
     if await _points_today(db, user_id) >= DAILY_POINT_CAP:
         return None

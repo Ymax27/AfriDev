@@ -12,13 +12,19 @@ into verifiable knowledge and auditable reputation:
 Built for CADEV2026 as a complete, runnable monorepo (frontend, API, database, Docker, CI,
 demo seed and read-only MCP tools).
 
+Highlights: three project modes (Showcase / Feedback / Open to contributors) with swipe or
+button actions, an Africa activity map, contextual country and mission rooms, in-app
+notifications, a low-bandwidth mode wired to the browser data-saver signal, three ownership
+verification methods (GitHub owner, challenge file, domain token) and a weekly Country Cup
+scored on average points per active member.
+
 ## Stack
 
 | Layer | Technology |
 | --- | --- |
 | Frontend | React 19, TypeScript (strict), Vite, Tailwind CSS 4, React Router, TanStack Query, Zustand, React Hook Form + Zod, i18next (FR default / EN), Lucide, Vitest + Testing Library |
 | Backend | FastAPI, Pydantic v2, SQLAlchemy 2 async, Alembic, asyncpg/SQLite, WebSockets, GitHub OAuth, pytest, Ruff |
-| Data | PostgreSQL 16 (production), SQLite (local/tests), 26 tables |
+| Data | PostgreSQL 16 (production), SQLite (local/tests), 27 tables |
 | Ops | Docker multi-stage images, Docker Compose, GitHub Actions CI |
 
 ## Quick start (local, no Docker)

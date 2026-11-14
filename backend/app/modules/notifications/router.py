@@ -36,6 +36,11 @@ async def list_notifications(
     )
 
 
+@router.post("/notifications/read-all")
+async def mark_all_read(user: CurrentUser, db: DbSession) -> dict[str, int]:
+    return {"updated": await service.mark_all_read(db, user.id)}
+
+
 @router.post("/notifications/{notification_id}/read", response_model=NotificationOut)
 async def mark_notification_read(notification_id: UUID, user: CurrentUser, db: DbSession) -> NotificationOut:
     return NotificationOut.model_validate(await service.mark_read(db, notification_id, user.id))

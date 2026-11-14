@@ -17,6 +17,7 @@ from app.modules.leaderboard.schemas import (
 )
 from app.modules.projects.models import Project, ProjectFeedback, ProjectLike
 from app.modules.reputation.models import ReputationTransaction
+from app.modules.reputation.service import ELIGIBLE_ACCOUNT_DAYS
 from app.modules.users.models import User
 
 
@@ -108,13 +109,19 @@ async def developer_leaderboard(
 
 
 async def project_leaderboard(
-    db: AsyncSession, *, limit: int, include_demo: bool
+    db: AsyncSession, *, limit: int, include_demo: bool, country_code: str | None = None
 ) -> list[ProjectRankOut]:
-    likes = (
+    """Weighted traction: only eligible accounts can move a project up."""
+    cutoff = datetime.now(UTC) - timedelta(days=ELIGIBLE_ACCOUNT_DAYS)
+    likes_stmt = (
         select(ProjectLike.project_id, func.count().label("likes"))
+        .join(User, User.id == ProjectLike.user_id)
+        .where(User.is_active.is_(True), User.created_at <= cutoff)
         .group_by(ProjectLike.project_id)
-        .subquery()
     )
+    if not include_demo:
+        likes_stmt = likes_stmt.where(User.is_demo.is_(False))
+    likes = likes_stmt.subquery()
     contributors = (
         select(ContributionRequest.project_id, func.count().label("contributors"))
         .where(ContributionRequest.status == "accepted")
@@ -141,11 +148,15 @@ async def project_leaderboard(
     )
     if not include_demo:
         stmt = stmt.where(Project.is_demo.is_(False))
+    if country_code:
+        stmt = stmt.join(Country, Project.country_id == Country.id).where(
+            func.upper(Country.code) == country_code.upper()
+        )
     rows = (await db.execute(stmt)).all()
 
     scored: list[tuple[float, Project, int, int, int]] = []
     for project, like_count, contributor_count, useful_count in rows:
-        # Weighted traction: no single metric can dominate, stars are capped.
+        # Weighted traction: no single metric can dominate, visits and stars are capped.
         score = (
             float(like_count) * 1.0
             + float(contributor_count) * 5.0
@@ -175,34 +186,61 @@ async def project_leaderboard(
     ]
 
 
-async def country_leaderboard(db: AsyncSession, *, limit: int, include_demo: bool) -> list[CountryRankOut]:
+async def country_leaderboard(
+    db: AsyncSession, *, limit: int, include_demo: bool, period: str = "week"
+) -> list[CountryRankOut]:
+    """Country cup: average points per active member, weekly by default.
+
+    Averaging keeps small countries competitive against large ones.
+    """
+    start = _period_start(period) or (datetime.now(UTC) - timedelta(days=7))
+    points_stmt = select(
+        ReputationTransaction.user_id,
+        func.coalesce(func.sum(ReputationTransaction.points), 0).label("points"),
+    ).where(
+        ReputationTransaction.created_at >= start,
+        ReputationTransaction.status == ReputationStatus.APPROVED.value,
+    )
+    points_stmt = points_stmt.group_by(ReputationTransaction.user_id).subquery()
+
     stmt = (
         select(
             Country,
-            func.count(User.id),
+            func.count(func.distinct(User.id)),
             func.coalesce(func.sum(User.reputation_points), 0),
+            func.coalesce(func.sum(points_stmt.c.points), 0),
+            func.count(func.distinct(points_stmt.c.user_id)),
         )
         .join(User, User.country_id == Country.id)
-        .where(User.is_active.is_(True), User.reputation_points > 0)
+        .outerjoin(points_stmt, points_stmt.c.user_id == User.id)
+        .where(User.is_active.is_(True))
         .group_by(Country.id)
     )
     if not include_demo:
         stmt = stmt.where(User.is_demo.is_(False))
     rows = (await db.execute(stmt)).all()
-    ranked = []
-    for country, developers, total_points in rows:
-        average = round(float(total_points) / developers, 2) if developers else 0.0
-        ranked.append((average, country, int(developers), int(total_points)))
-    ranked.sort(key=lambda item: item[0], reverse=True)
+
+    ranked: list[tuple[float, Country, int, int, int, int]] = []
+    for country, developers, total_points, week_points, active_members in rows:
+        active = int(active_members)
+        if active == 0:
+            continue
+        average = round(float(week_points) / active, 2)
+        ranked.append((average, country, int(developers), int(total_points), int(week_points), active))
+    ranked.sort(key=lambda item: (item[0], item[4]), reverse=True)
     return [
         CountryRankOut(
             rank=index + 1,
             country=CountryOut.model_validate(country),
-            active_developers=developers,
+            active_developers=active,
             total_points=total_points,
+            week_points=week_points,
             average_points=average,
+            period=period,
         )
-        for index, (average, country, developers, total_points) in enumerate(ranked[:limit])
+        for index, (average, country, _developers, total_points, week_points, active) in enumerate(
+            ranked[:limit]
+        )
     ]
 
 

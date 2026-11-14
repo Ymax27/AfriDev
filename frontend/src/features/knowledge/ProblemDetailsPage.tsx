@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, CheckCircle2, ExternalLink } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ExternalLink, ThumbsUp } from "lucide-react";
 
 import {
   Alert,
@@ -47,6 +47,11 @@ export default function ProblemDetailsPage() {
       setNotice(t("knowledge.created"));
       void queryClient.invalidateQueries({ queryKey: ["knowledge", id] });
     },
+  });
+
+  const voteSolution = useMutation({
+    mutationFn: (solutionId: string) => knowledgeApi.voteSolution(solutionId),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["knowledge", id] }),
   });
 
   const acceptSolution = useMutation({
@@ -137,6 +142,20 @@ export default function ProblemDetailsPage() {
                       ))}
                     </ul>
                   ) : null}
+
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant={solution.voted_by_me ? "secondary" : "ghost"}
+                      onClick={() => voteSolution.mutate(solution.id)}
+                      disabled={!user || solution.voted_by_me || user.username === solution.author.username}
+                      loading={voteSolution.isPending}
+                      icon={<ThumbsUp className="size-3.5" aria-hidden="true" />}
+                    >
+                      {t("knowledge.useful")} ({solution.useful_votes})
+                    </Button>
+                    <span className="text-xs text-muted">{t("knowledge.usefulHelp")}</span>
+                  </div>
 
                   {isAuthor && !solution.is_accepted && !data.has_accepted_solution ? (
                     <div className="mt-4">

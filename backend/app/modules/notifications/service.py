@@ -36,6 +36,17 @@ async def list_for_user(
     return list(result.scalars().all()), total
 
 
+async def mark_all_read(db: AsyncSession, user_id: UUID) -> int:
+    result = await db.execute(
+        select(Notification).where(Notification.user_id == user_id, Notification.is_read.is_(False))
+    )
+    items = list(result.scalars().all())
+    for item in items:
+        item.is_read = True
+    await db.commit()
+    return len(items)
+
+
 async def mark_read(db: AsyncSession, notification_id: UUID, user_id: UUID) -> Notification:
     notification = await db.get(Notification, notification_id)
     if not notification:

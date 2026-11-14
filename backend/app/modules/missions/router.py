@@ -42,8 +42,6 @@ async def list_missions(
 
 @router.post("", response_model=MissionOut, status_code=201)
 async def create_mission(payload: MissionCreate, user: CurrentUser, db: DbSession) -> MissionOut:
-    if not (user.is_admin or any(role.role in {"sponsor", "api_provider"} for role in user.roles)):
-        raise ForbiddenError("Only sponsors, API providers or admins can publish missions")
     return MissionOut.model_validate(await service.create_mission(db, user, payload))
 
 

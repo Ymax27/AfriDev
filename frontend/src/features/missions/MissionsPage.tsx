@@ -1,13 +1,31 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
-import { CalendarClock, Gift } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { CalendarClock, Gift, Plus } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Badge, Card, EmptyState, ErrorState, Pagination, SearchBar, Select, SkeletonList, TechnologyTag } from "@/components/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  CountrySelector,
+  EmptyState,
+  ErrorState,
+  Field,
+  Input,
+  Modal,
+  Pagination,
+  SearchBar,
+  Select,
+  SkeletonList,
+  TechnologyTag,
+  Textarea,
+} from "@/components/ui";
+import { useCountries } from "@/hooks/useCountries";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { missionsApi } from "@/services/api";
+import { useAuthStore } from "@/stores/auth-store";
 import { useUiStore } from "@/stores/ui-store";
 import { formatDate, truncate } from "@/lib/utils";
 
@@ -26,7 +44,40 @@ export default function MissionsPage() {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [draft, setDraft] = useState({
+    title: "",
+    description: "",
+    objectives: "",
+    reward_description: "",
+    required_skills: "",
+    country_code: "",
+  });
   const debounced = useDebouncedValue(query);
+  const queryClient = useQueryClient();
+  const { user } = useAuthStore();
+  const { data: countries } = useCountries();
+  const canPublish = Boolean(
+    user &&
+      (user.is_admin || user.roles.some((role) => ["api_provider", "company", "sponsor"].includes(role.role))),
+  );
+
+  const createMission = useMutation({
+    mutationFn: () =>
+      missionsApi.create({
+        title: draft.title,
+        description: draft.description,
+        objectives: draft.objectives,
+        reward_description: draft.reward_description || null,
+        required_skills: draft.required_skills.split(",").map((item) => item.trim()).filter(Boolean),
+        country_code: draft.country_code || null,
+      }),
+    onSuccess: () => {
+      setCreateOpen(false);
+      setDraft({ title: "", description: "", objectives: "", reward_description: "", required_skills: "", country_code: "" });
+      void queryClient.invalidateQueries({ queryKey: ["missions"] });
+    },
+  });
 
   const missions = useQuery({
     queryKey: ["missions", { q: debounced, status, page }],
@@ -36,6 +87,14 @@ export default function MissionsPage() {
   return (
     <div>
       <PageHeader title={t("missions.title")} description={t("missions.subtitle")} />
+
+      {canPublish ? (
+        <div className="mb-4 flex justify-end">
+          <Button onClick={() => setCreateOpen(true)} icon={<Plus className="size-4" aria-hidden="true" />}>
+            {t("missions.publishMission")}
+          </Button>
+        </div>
+      ) : null}
 
       <div className="mb-5 flex flex-col gap-3 sm:flex-row">
         <div className="flex-1">
@@ -118,6 +177,55 @@ export default function MissionsPage() {
       ) : (
         <EmptyState title={t("missions.empty")} />
       )}
+
+      <Modal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        title={t("missions.publishMission")}
+        closeLabel={t("common.close")}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setCreateOpen(false)}>{t("common.cancel")}</Button>
+            <Button
+              onClick={() => createMission.mutate()}
+              loading={createMission.isPending}
+              disabled={draft.title.trim().length < 8 || draft.description.trim().length < 30 || draft.objectives.trim().length < 20}
+            >
+              {t("missions.publish")}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <Field label={t("missions.formTitle")} htmlFor="mission-title">
+            <Input id="mission-title" value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} />
+          </Field>
+          <Field label={t("missions.formDescription")} htmlFor="mission-description">
+            <Textarea id="mission-description" rows={4} value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} />
+          </Field>
+          <Field label={t("missions.objectives")} htmlFor="mission-objectives">
+            <Textarea id="mission-objectives" rows={3} value={draft.objectives} onChange={(event) => setDraft({ ...draft, objectives: event.target.value })} />
+          </Field>
+          <Field label={t("missions.skills")} hint={t("missions.skillsHelp")} htmlFor="mission-skills">
+            <Input id="mission-skills" value={draft.required_skills} onChange={(event) => setDraft({ ...draft, required_skills: event.target.value })} />
+          </Field>
+          <Field label={t("missions.reward")} htmlFor="mission-reward">
+            <Input id="mission-reward" value={draft.reward_description} onChange={(event) => setDraft({ ...draft, reward_description: event.target.value })} />
+          </Field>
+          <Field label={t("leaderboard.country")} htmlFor="mission-country">
+            <CountrySelector
+              id="mission-country"
+              countries={countries ?? []}
+              value={draft.country_code}
+              onChange={(code) => setDraft({ ...draft, country_code: code })}
+              includeAll
+              allLabel={t("common.all")}
+              language={language}
+            />
+          </Field>
+          <p className="text-xs text-muted">{t("missions.manualReviewNote")}</p>
+        </div>
+      </Modal>
     </div>
   );
 }

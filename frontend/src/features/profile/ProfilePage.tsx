@@ -1,10 +1,12 @@
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, Code2, Globe, MapPin, Pencil } from "lucide-react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Ban, CalendarDays, Code2, Flag, Globe, MapPin, Pencil } from "lucide-react";
 
-import { Avatar, Badge, Card, EmptyState, ErrorState, ReputationBadge, SkeletonList, TechnologyTag } from "@/components/ui";
-import { projectsApi, usersApi } from "@/services/api";
+import { ReportDialog } from "@/components/ReportDialog";
+import { Avatar, Badge, Button, Card, EmptyState, ErrorState, ReputationBadge, SkeletonList, TechnologyTag } from "@/components/ui";
+import { moderationApi, projectsApi, usersApi } from "@/services/api";
 import { useAuthStore } from "@/stores/auth-store";
 import { useUiStore } from "@/stores/ui-store";
 import { formatDate } from "@/lib/utils";
@@ -14,8 +16,13 @@ export default function ProfilePage() {
   const { t } = useTranslation();
   const { language } = useUiStore();
   const { user } = useAuthStore();
+  const [reportOpen, setReportOpen] = useState(false);
 
   const profile = useQuery({ queryKey: ["profile", username], queryFn: () => usersApi.profile(username) });
+  const block = useMutation({
+    mutationFn: () => moderationApi.block(username, "blocked from profile"),
+    onSuccess: () => window.alert(t("profile.blocked")),
+  });
   const projects = useQuery({
     queryKey: ["profile", username, "projects"],
     queryFn: () => projectsApi.list({ creator: username, page_size: 12 }),
@@ -54,6 +61,23 @@ export default function ProfilePage() {
             <Link to="/settings" className="inline-flex items-center gap-1 rounded-xl border border-slate-300 px-3 py-2 text-sm font-medium text-primary-700 hover:bg-slate-50">
               <Pencil className="size-4" aria-hidden="true" /> {t("profile.edit")}
             </Link>
+          ) : user ? (
+            <div className="flex flex-wrap gap-2">
+              <Button variant="secondary" size="sm" onClick={() => setReportOpen(true)} icon={<Flag className="size-4" aria-hidden="true" />}>
+                {t("common.report")}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  if (window.confirm(t("profile.blockConfirm", { username: data.username }))) block.mutate();
+                }}
+                loading={block.isPending}
+                icon={<Ban className="size-4" aria-hidden="true" />}
+              >
+                {t("profile.block")}
+              </Button>
+            </div>
           ) : null}
         </div>
 
@@ -75,6 +99,16 @@ export default function ProfilePage() {
           ) : null}
         </div>
 
+        {data.titles.length > 0 ? (
+          <div className="mt-4 flex flex-wrap gap-1.5">
+            {data.titles.map((title) => (
+              <Badge key={title} tone="highlight">
+                {t(`titles.${title}`, { defaultValue: title })}
+              </Badge>
+            ))}
+          </div>
+        ) : null}
+
         {data.skills.length > 0 ? (
           <div className="mt-4">
             <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">{t("profile.skills")}</h2>
@@ -87,10 +121,12 @@ export default function ProfilePage() {
         ) : null}
       </header>
 
-      <dl className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <dl className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
         {[
           { label: t("profile.projects"), value: data.projects_count },
+          { label: t("profile.verifiedProjects"), value: data.verified_projects_count },
           { label: t("profile.solutions"), value: data.accepted_solutions_count },
+          { label: t("profile.mergedContributions"), value: data.merged_contributions_count },
           { label: t("profile.reports"), value: data.field_reports_count },
           { label: t("profile.reputation"), value: data.reputation_points },
         ].map((stat) => (
@@ -125,6 +161,8 @@ export default function ProfilePage() {
           <EmptyState title={t("profile.emptyProjects")} />
         )}
       </section>
+
+      <ReportDialog open={reportOpen} onClose={() => setReportOpen(false)} targetType="user" targetId={data.id} />
     </div>
   );
 }

@@ -32,7 +32,11 @@
     "page": "Page",
     "optional": "facultatif",
     "close": "Fermer",
-    "loginRequired": "Connectez-vous pour continuer."
+    "loginRequired": "Connectez-vous pour continuer.",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "report": "Signaler",
+    "loading": "Chargement…"
   },
   "auth": {
     "title": "Bienvenue sur AfriDev Hub",
@@ -168,7 +172,25 @@
     "requestAccepted": "Demande acceptée : une conversation privée a été ouverte.",
     "requestRejected": "Demande refusée.",
     "contributionsEmpty": "Aucune demande de contribution.",
-    "feedbackEmpty": "Aucun feedback pour le moment."
+    "feedbackEmpty": "Aucun feedback pour le moment.",
+    "updated": "Projet mis à jour.",
+    "deleteConfirm": "Supprimer définitivement ce projet ?",
+    "verificationDone": "Propriété vérifiée.",
+    "verifyConfirm": "Vérifier",
+    "verifyStart": "Générer un défi",
+    "verifyMethod": "Méthode de vérification",
+    "verifyMethodHelp": "Prouvez que le dépôt ou le domaine vous appartient.",
+    "verifyRepositoryOwner": "Dépôt GitHub dont je suis propriétaire",
+    "verifyRepositoryFile": "Fichier de vérification dans le dépôt",
+    "verifyDomain": "Fichier de vérification sur mon domaine",
+    "verifyOwnerHint": "Nous comparons le propriétaire du dépôt GitHub à votre compte lié, puis vous validez.",
+    "verifyFileHint": "Ajoutez ce jeton dans un fichier afridev-verify.txt à la racine du dépôt, puis validez.",
+    "verifyDomainHint": "Publiez ce jeton sur la page d'accueil de votre site, puis validez.",
+    "verifyToken": "Jeton trouvé sur votre dépôt ou site",
+    "markMerged": "Marquer fusionnée",
+    "mergedBadge": "Fusionnée",
+    "merged": "Contribution fusionnée : +15 points.",
+    "editTitle": "Modifier le projet"
   },
   "knowledge": {
     "title": "Échange de savoirs",
@@ -204,7 +226,9 @@
     "documentationHelp": "Un lien par ligne.",
     "publish": "Publier",
     "created": "Problème publié.",
-    "askedOn": "Publié le"
+    "askedOn": "Publié le",
+    "useful": "Utile",
+    "usefulHelp": "+2 points par vote, plafonné à +10 par solution."
   },
   "fieldReports": {
     "title": "Rapports terrain",
@@ -239,7 +263,12 @@
     "openMissions": "Missions ouvertes",
     "backToCountries": "Tous les pays",
     "noData": "Aucune activité enregistrée pour ce pays.",
-    "recentReports": "Rapports terrain récents"
+    "recentReports": "Rapports terrain récents",
+    "mapLabel": "Carte d'Afrique de l'activité",
+    "mapNone": "Aucune activité",
+    "mapSome": "Activité modérée",
+    "mapMost": "Très active",
+    "mapSource": "Fond de carte Natural Earth (domaine public)"
   },
   "leaderboard": {
     "title": "Classements",
@@ -265,7 +294,8 @@
     "activeDevelopers": "Développeurs actifs",
     "formulaNote": "Score projet pondéré : j'aime, contributeurs acceptés, feedbacks utiles, visites et étoiles (plafonnées).",
     "cupNote": "La Coupe des pays classe la moyenne de points par développeur actif, pas le total.",
-    "empty": "Aucun classement disponible."
+    "empty": "Aucun classement disponible.",
+    "cupWeek": "Cette semaine"
   },
   "missions": {
     "title": "Missions sponsorisées",
@@ -295,7 +325,14 @@
     "objectives": "Objectifs",
     "alreadySubmitted": "Vous avez déjà soumis une solution.",
     "ownMission": "Vous êtes le sponsor de cette mission.",
-    "points": "points"
+    "points": "points",
+    "publishMission": "Publier une mission",
+    "publish": "Publier",
+    "formTitle": "Titre",
+    "formDescription": "Description",
+    "skills": "Compétences attendues",
+    "skillsHelp": "Séparées par des virgules.",
+    "manualReviewNote": "Gestion manuelle : vous validez vous-même les livraisons."
   },
   "apis": {
     "title": "Annuaire des API africaines",
@@ -314,7 +351,9 @@
     "integrationNotes": "Notes d'intégration",
     "provider": "Fournisseur",
     "viewDocs": "Ouvrir la documentation",
-    "filterCountry": "Pays"
+    "filterCountry": "Pays",
+    "editTitle": "Modifier la fiche",
+    "description": "Description"
   },
   "messages": {
     "title": "Messages",
@@ -338,7 +377,12 @@
     "edit": "Modifier mon profil",
     "skills": "Compétences",
     "reputation": "Réputation",
-    "emptyProjects": "Aucun projet publié."
+    "emptyProjects": "Aucun projet publié.",
+    "block": "Bloquer",
+    "blocked": "Ce compte est bloqué. Vous ne pouvez plus échanger de messages.",
+    "blockConfirm": "Bloquer @{{username}} ? Les messages et demandes de contribution seront refusés dans les deux sens.",
+    "verifiedProjects": "Projets vérifiés",
+    "mergedContributions": "Contributions fusionnées"
   },
   "settings": {
     "title": "Paramètres",
@@ -445,5 +489,53 @@
     "api": "API REST",
     "rights": "Projet de démonstration CADEV2026.",
     "slogan": "Show. Solve. Prove."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAll": "Tout marquer comme lu",
+    "empty": "Aucune notification pour l'instant."
+  },
+  "moderation": {
+    "reportTitle": "Signaler ce contenu",
+    "reportSubmit": "Envoyer le signalement",
+    "reportThanks": "Merci, les modérateurs vont examiner ce contenu.",
+    "reason": "Motif",
+    "details": "Précisions",
+    "detailsHelp": "Décrivez le problème en quelques lignes.",
+    "freezeNote": "Un compte signalé voit ses points gelés quelques jours pendant l'examen.",
+    "reasons": {
+      "spam": "Spam",
+      "misleading": "Contenu trompeur",
+      "harassment": "Harcèlement",
+      "copyright": "Droits d'auteur",
+      "other": "Autre"
+    }
+  },
+  "titles": {
+    "first_solution": "Première solution acceptée",
+    "field_cartographer": "Cartographe du terrain",
+    "verified_builder": "Bâtisseur vérifié",
+    "team_player": "Équipier",
+    "expert": "Expert"
+  },
+  "rooms": {
+    "presence": "{{count}} personne(s) dans le salon",
+    "slowDown": "Doucement : limite de messages atteinte, réessayez dans quelques secondes.",
+    "connected": "Connecté",
+    "disconnected": "Hors ligne",
+    "empty": "Le salon est vide. Lancez la conversation.",
+    "placeholder": "Votre message…",
+    "send": "Envoyer",
+    "rules": "Texte seul · 10 messages / 30 s · signalez tout abus.",
+    "countryTitle": "Salon du pays · {{country}}",
+    "countryDescription": "Salon contextuel pour les développeurs de ce pays.",
+    "missionTitle": "Salon de la mission",
+    "missionDescription": "Échangez avec les autres participants de cette mission."
+  },
+  "roles": {
+    "developer": "Développeur",
+    "project_creator": "Créateur de projet",
+    "api_provider": "Fournisseur d'API",
+    "company": "Entreprise"
   }
 }

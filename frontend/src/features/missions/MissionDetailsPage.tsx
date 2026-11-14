@@ -2,9 +2,11 @@ import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, CalendarClock, Gift, Target } from "lucide-react";
+import { ArrowLeft, CalendarClock, Flag, Gift, Target } from "lucide-react";
 
+import { ReportDialog } from "@/components/ReportDialog";
 import { Alert, Badge, Button, Card, ErrorState, Field, Input, SkeletonList, TechnologyTag, Textarea } from "@/components/ui";
+import { ChatRoom } from "@/features/messaging/ChatRoom";
 import { missionsApi } from "@/services/api";
 import { useAuthStore } from "@/stores/auth-store";
 import { useUiStore } from "@/stores/ui-store";
@@ -19,6 +21,7 @@ export default function MissionDetailsPage() {
   const [form, setForm] = useState({ summary: "", solution_url: "" });
   const [reviewNote, setReviewNote] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
 
   const mission = useQuery({ queryKey: ["mission", id], queryFn: () => missionsApi.get(id) });
   const isSponsor = Boolean(user && mission.data && user.username === mission.data.sponsor.username);
@@ -69,6 +72,11 @@ export default function MissionDetailsPage() {
         <div className="flex flex-wrap items-center gap-2">
           <Badge tone="accent">{data.status.replaceAll("_", " ")}</Badge>
           {data.country ? <Badge tone="neutral">{data.country.flag_emoji ?? ""} {language === "fr" ? data.country.name_fr : data.country.name}</Badge> : null}
+          {user ? (
+            <Button variant="ghost" size="sm" className="ml-auto" onClick={() => setReportOpen(true)} icon={<Flag className="size-4" aria-hidden="true" />}>
+              {t("common.report")}
+            </Button>
+          ) : null}
         </div>
         <h1 className="mt-3 text-2xl font-bold text-primary-800">{data.title}</h1>
         <p className="mt-1 text-xs text-muted">{t("missions.sponsor")} : @{data.sponsor.username} · {formatDate(data.created_at, language)}</p>
@@ -98,6 +106,14 @@ export default function MissionDetailsPage() {
         </h2>
         <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-muted">{data.objectives}</p>
       </Card>
+
+      <div className="mb-5">
+        <ChatRoom
+          roomPath={`/ws/missions/${id}`}
+          title={t("rooms.missionTitle")}
+          description={t("rooms.missionDescription")}
+        />
+      </div>
 
       {isSponsor ? (
         <Card>
@@ -173,6 +189,8 @@ export default function MissionDetailsPage() {
           )}
         </Card>
       )}
+
+      <ReportDialog open={reportOpen} onClose={() => setReportOpen(false)} targetType="mission" targetId={id} />
     </div>
   );
 }

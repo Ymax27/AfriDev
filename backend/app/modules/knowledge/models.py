@@ -3,7 +3,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Index, String, Text, Uuid
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Index, String, Text, UniqueConstraint, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base, TimestampMixin, UUIDPrimaryKeyMixin
@@ -49,3 +49,18 @@ class Solution(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     is_demo: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     author = relationship("User", lazy="selectin")
+
+
+class SolutionVote(Base, UUIDPrimaryKeyMixin, TimestampMixin):
+    """Community usefulness vote: +2 points to the solution author, capped per solution."""
+
+    __tablename__ = "solution_votes"
+    __table_args__ = (UniqueConstraint("solution_id", "voter_id", name="uq_solution_votes_solution_voter"),)
+
+    solution_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("solutions.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    voter_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    is_demo: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)

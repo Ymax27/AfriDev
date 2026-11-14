@@ -98,7 +98,11 @@ class FeedbackOut(ORMModel):
 
 
 class OwnershipVerifyRequest(BaseModel):
-    method: str = Field(default="repository_file", max_length=40)
+    method: str = Field(default="repository_file", pattern="^(repository_file|repository_owner|domain)$")
+
+
+class OwnershipConfirmRequest(BaseModel):
+    token: str | None = Field(default=None, max_length=200)
 
 
 class OwnershipVerificationOut(ORMModel):

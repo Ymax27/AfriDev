@@ -20,6 +20,7 @@ import {
 
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { Logo } from "@/components/layout/Logo";
+import { NotificationsBell } from "@/components/layout/NotificationsBell";
 import { Avatar, ReputationBadge } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
@@ -63,15 +64,18 @@ export function AppLayout() {
 
       <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
         <Logo />
-        <button
-          type="button"
-          onClick={toggleSidebar}
-          aria-label={sidebarOpen ? t("nav.close") : t("nav.menu")}
-          aria-expanded={sidebarOpen}
-          className="rounded-lg border border-slate-300 p-2"
-        >
-          {sidebarOpen ? <X className="size-5" /> : <Menu className="size-5" />}
-        </button>
+        <div className="flex items-center gap-2">
+          {user ? <NotificationsBell /> : null}
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            aria-label={sidebarOpen ? t("nav.close") : t("nav.menu")}
+            aria-expanded={sidebarOpen}
+            className="rounded-lg border border-slate-300 p-2"
+          >
+            {sidebarOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+          </button>
+        </div>
       </header>
 
       <div className="mx-auto flex w-full max-w-[1400px]">
@@ -133,6 +137,12 @@ export function AppLayout() {
           </nav>
 
           <div className="mt-6 space-y-3 border-t border-slate-200 pt-4">
+            {user ? (
+              <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 px-3 py-2">
+                <span className="text-xs font-medium text-muted">{t("notifications.title")}</span>
+                <NotificationsBell />
+              </div>
+            ) : null}
             <LanguageSwitcher />
             <button
               type="button"

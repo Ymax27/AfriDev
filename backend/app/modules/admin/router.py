@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Query
 from app.api.dependencies import AdminUser, DbSession, Pagination
 from app.modules.admin import service
 from app.modules.admin.schemas import AdminOverview, AdminUserListOut
+from app.modules.field_reports import service as field_report_service
 from app.modules.moderation import service as moderation_service
 from app.modules.moderation.schemas import ReportOut, ReportResolve
 from app.modules.users.schemas import UserOut
@@ -80,6 +81,11 @@ async def resolve_report(
 @router.post("/reputation/recalculate")
 async def recalculate(admin: AdminUser, db: DbSession) -> dict[str, int]:
     return {"users_recalculated": await service.recalculate_reputation(db, admin)}
+
+
+@router.post("/field-reports/revalidate")
+async def revalidate_field_reports(_: AdminUser, db: DbSession) -> dict[str, int]:
+    return {"flagged": await field_report_service.flag_stale_reports(db)}
 
 
 @router.post("/demo/purge")

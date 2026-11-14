@@ -41,6 +41,7 @@ class User(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_demo: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
     reputation_frozen: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    reputation_frozen_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     country = relationship("Country", lazy="selectin")

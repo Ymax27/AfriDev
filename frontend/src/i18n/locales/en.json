@@ -32,7 +32,11 @@
     "page": "Page",
     "optional": "optional",
     "close": "Close",
-    "loginRequired": "Sign in to continue."
+    "loginRequired": "Sign in to continue.",
+    "edit": "Edit",
+    "delete": "Delete",
+    "report": "Report",
+    "loading": "Loading…"
   },
   "auth": {
     "title": "Welcome to AfriDev Hub",
@@ -168,7 +172,25 @@
     "requestAccepted": "Request accepted: a private conversation is open.",
     "requestRejected": "Request declined.",
     "contributionsEmpty": "No contribution requests.",
-    "feedbackEmpty": "No feedback yet."
+    "feedbackEmpty": "No feedback yet.",
+    "updated": "Project updated.",
+    "deleteConfirm": "Delete this project permanently?",
+    "verificationDone": "Ownership verified.",
+    "verifyConfirm": "Verify",
+    "verifyStart": "Generate a challenge",
+    "verifyMethod": "Verification method",
+    "verifyMethodHelp": "Prove that the repository or domain belongs to you.",
+    "verifyRepositoryOwner": "GitHub repository I own",
+    "verifyRepositoryFile": "Verification file in the repository",
+    "verifyDomain": "Verification file on my domain",
+    "verifyOwnerHint": "We compare the GitHub repository owner with your linked account, then you confirm.",
+    "verifyFileHint": "Add this token in an afridev-verify.txt file at the repository root, then confirm.",
+    "verifyDomainHint": "Publish this token on your site's home page, then confirm.",
+    "verifyToken": "Token found on your repository or site",
+    "markMerged": "Mark merged",
+    "mergedBadge": "Merged",
+    "merged": "Contribution merged: +15 points.",
+    "editTitle": "Edit project"
   },
   "knowledge": {
     "title": "Knowledge exchange",
@@ -204,7 +226,9 @@
     "documentationHelp": "One link per line.",
     "publish": "Publish",
     "created": "Problem published.",
-    "askedOn": "Published"
+    "askedOn": "Published",
+    "useful": "Useful",
+    "usefulHelp": "+2 points per vote, capped at +10 per solution."
   },
   "fieldReports": {
     "title": "Field reports",
@@ -239,7 +263,12 @@
     "openMissions": "Open missions",
     "backToCountries": "All countries",
     "noData": "No activity recorded for this country.",
-    "recentReports": "Recent field reports"
+    "recentReports": "Recent field reports",
+    "mapLabel": "Africa activity map",
+    "mapNone": "No activity",
+    "mapSome": "Moderate activity",
+    "mapMost": "Very active",
+    "mapSource": "Natural Earth basemap (public domain)"
   },
   "leaderboard": {
     "title": "Leaderboards",
@@ -265,7 +294,8 @@
     "activeDevelopers": "Active developers",
     "formulaNote": "Weighted project score: likes, accepted contributors, useful feedback, visits and capped stars.",
     "cupNote": "The Country Cup ranks the average points per active developer, not the total.",
-    "empty": "No ranking available."
+    "empty": "No ranking available.",
+    "cupWeek": "This week"
   },
   "missions": {
     "title": "Sponsored missions",
@@ -295,7 +325,14 @@
     "objectives": "Objectives",
     "alreadySubmitted": "You already submitted a solution.",
     "ownMission": "You sponsor this mission.",
-    "points": "points"
+    "points": "points",
+    "publishMission": "Publish a mission",
+    "publish": "Publish",
+    "formTitle": "Title",
+    "formDescription": "Description",
+    "skills": "Required skills",
+    "skillsHelp": "Comma separated.",
+    "manualReviewNote": "Manual review: you validate the deliveries yourself."
   },
   "apis": {
     "title": "African API directory",
@@ -314,7 +351,9 @@
     "integrationNotes": "Integration notes",
     "provider": "Provider",
     "viewDocs": "Open documentation",
-    "filterCountry": "Country"
+    "filterCountry": "Country",
+    "editTitle": "Edit sheet",
+    "description": "Description"
   },
   "messages": {
     "title": "Messages",
@@ -338,7 +377,12 @@
     "edit": "Edit my profile",
     "skills": "Skills",
     "reputation": "Reputation",
-    "emptyProjects": "No project published."
+    "emptyProjects": "No project published.",
+    "block": "Block",
+    "blocked": "This account is blocked. Messaging is disabled between you.",
+    "blockConfirm": "Block @{{username}}? Messages and contribution requests will be refused both ways.",
+    "verifiedProjects": "Verified projects",
+    "mergedContributions": "Merged contributions"
   },
   "settings": {
     "title": "Settings",
@@ -445,5 +489,53 @@
     "api": "REST API",
     "rights": "CADEV2026 demonstration project.",
     "slogan": "Show. Solve. Prove."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAll": "Mark all as read",
+    "empty": "No notifications yet."
+  },
+  "moderation": {
+    "reportTitle": "Report this content",
+    "reportSubmit": "Send report",
+    "reportThanks": "Thanks, moderators will review this content.",
+    "reason": "Reason",
+    "details": "Details",
+    "detailsHelp": "Describe the issue in a few lines.",
+    "freezeNote": "A reported account has its points frozen for a few days during review.",
+    "reasons": {
+      "spam": "Spam",
+      "misleading": "Misleading",
+      "harassment": "Harassment",
+      "copyright": "Copyright",
+      "other": "Other"
+    }
+  },
+  "titles": {
+    "first_solution": "First accepted solution",
+    "field_cartographer": "Field cartographer",
+    "verified_builder": "Verified builder",
+    "team_player": "Team player",
+    "expert": "Expert"
+  },
+  "rooms": {
+    "presence": "{{count}} people in the room",
+    "slowDown": "Slow down: message limit reached, retry in a few seconds.",
+    "connected": "Connected",
+    "disconnected": "Offline",
+    "empty": "The room is empty. Start the conversation.",
+    "placeholder": "Your message…",
+    "send": "Send",
+    "rules": "Text only · 10 messages / 30 s · report abuse.",
+    "countryTitle": "Country room · {{country}}",
+    "countryDescription": "Contextual room for developers in this country.",
+    "missionTitle": "Mission room",
+    "missionDescription": "Talk with the other participants of this mission."
+  },
+  "roles": {
+    "developer": "Developer",
+    "project_creator": "Project creator",
+    "api_provider": "API provider",
+    "company": "Company"
   }
 }

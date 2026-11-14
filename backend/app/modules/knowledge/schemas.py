@@ -37,6 +37,8 @@ class SolutionOut(ORMModel):
     accepted_at: datetime | None = None
     author: UserSummary
     created_at: datetime
+    useful_votes: int = 0
+    voted_by_me: bool = False
 
 
 class ProblemOut(ORMModel):

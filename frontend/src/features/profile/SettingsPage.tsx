@@ -11,7 +11,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { useUiStore } from "@/stores/ui-store";
 import type { UserProfile } from "@/types/api";
 
-const ROLE_OPTIONS = ["developer", "maintainer", "mentor", "student", "sponsor"] as const;
+const ROLE_OPTIONS = ["developer", "project_creator", "api_provider", "company"] as const;
 
 function ProfileEditor({ profile, onSaved }: { profile: UserProfile; onSaved: () => void }) {
   const { t } = useTranslation();
@@ -123,7 +123,7 @@ function ProfileEditor({ profile, onSaved }: { profile: UserProfile; onSaved: ()
                       })
                     }
                   />
-                  {role}
+                  {t(`roles.${role}`, { defaultValue: role })}
                 </label>
               );
             })}

@@ -74,3 +74,25 @@
     transition-duration: 0.001ms !important;
   }
 }
+
+/* Low-bandwidth mode: reduces motion, shadows and heavy blur for slow connections. */
+html[data-lightweight="true"] *,
+html[data-lightweight="true"] *::before,
+html[data-lightweight="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+html[data-lightweight="true"] .surface-card {
+  box-shadow: none !important;
+}
+
+html[data-lightweight="true"] .backdrop-blur {
+  backdrop-filter: none !important;
+}
+
+html[data-lightweight="true"] img {
+  image-rendering: auto;
+}

@@ -16,10 +16,10 @@ services:
   backend:
     build: ./backend
     environment:
-      APP_ENV: ${APP_ENV:-production}
+      APP_ENV: ${APP_ENV:-development}
       DATABASE_URL: postgresql+asyncpg://afridev:${POSTGRES_PASSWORD:-afridev}@db:5432/afridev
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
-      DEMO_MODE: ${DEMO_MODE:-false}
+      DEMO_MODE: ${DEMO_MODE:-true}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8080}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080}
       GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}

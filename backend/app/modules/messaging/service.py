@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ForbiddenError, NotFoundError
 from app.modules.messaging.models import Conversation, ConversationMember, Message
+from app.modules.moderation.service import blocked_between
 from app.modules.users.models import User
 
 
@@ -56,6 +57,9 @@ async def list_messages(
 async def post_message(
     db: AsyncSession, conversation: Conversation, sender: User, body: str
 ) -> Message:
+    for member in conversation.members:
+        if member.user_id != sender.id and await blocked_between(db, sender.id, member.user_id):
+            raise ForbiddenError("Messaging is blocked between these accounts")
     message = Message(conversation_id=conversation.id, sender_id=sender.id, body=body.strip())
     db.add(message)
     conversation.last_message_at = datetime.now(UTC)

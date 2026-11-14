@@ -1,6 +1,8 @@
 """WebSocket endpoints with session and membership checks."""
 
 import logging
+import re
+import time
 from uuid import UUID
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -18,6 +20,23 @@ from app.websocket.manager import manager
 
 logger = logging.getLogger("afridev.websocket")
 router = APIRouter()
+
+ROOM_MESSAGE_LIMIT = 10
+ROOM_MESSAGE_WINDOW_SECONDS = 30
+CONTROL_CHARS = re.compile(r"[\x00-\x08\x0b-\x1f\x7f]")
+
+
+def _clean_room_message(payload: dict) -> str:
+    return CONTROL_CHARS.sub("", str(payload.get("body", "")))[:2000]
+
+
+def _throttled(timestamps: list[float]) -> bool:
+    now = time.monotonic()
+    timestamps[:] = [stamp for stamp in timestamps if now - stamp < ROOM_MESSAGE_WINDOW_SECONDS]
+    if len(timestamps) >= ROOM_MESSAGE_LIMIT:
+        return True
+    timestamps.append(now)
+    return False
 
 
 async def _session_user(websocket: WebSocket) -> User | None:
@@ -108,15 +127,18 @@ async def country_socket(websocket: WebSocket, code: str) -> None:
     await manager.broadcast(
         room, {"type": "presence", "room": room_label, "members": manager.room_size(room)}
     )
+    timestamps: list[float] = []
     try:
         while True:
             payload = await websocket.receive_json()
             if payload.get("type") == "ping":
                 await websocket.send_json({"type": "pong"})
+            elif _throttled(timestamps):
+                await websocket.send_json({"type": "error", "message": "slow down"})
             else:
                 await manager.broadcast(
                     room,
-                    {"type": "room.message", "author": user.username, "body": str(payload.get("body", ""))[:2000]},
+                    {"type": "room.message", "author": user.username, "body": _clean_room_message(payload)},
                 )
     except WebSocketDisconnect:
         pass
@@ -132,15 +154,18 @@ async def mission_socket(websocket: WebSocket, mission_id: UUID) -> None:
         return
     room = f"mission:{mission_id}"
     await manager.connect(room, websocket)
+    timestamps: list[float] = []
     try:
         while True:
             payload = await websocket.receive_json()
             if payload.get("type") == "ping":
                 await websocket.send_json({"type": "pong"})
+            elif _throttled(timestamps):
+                await websocket.send_json({"type": "error", "message": "slow down"})
             else:
                 await manager.broadcast(
                     room,
-                    {"type": "room.message", "author": user.username, "body": str(payload.get("body", ""))[:2000]},
+                    {"type": "room.message", "author": user.username, "body": _clean_room_message(payload)},
                 )
     except WebSocketDisconnect:
         pass
